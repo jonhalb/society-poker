@@ -1,0 +1,58 @@
+/* Design tokens copied from prototype.html.
+   The app is always dark (card-room theme), whatever the phone's setting. */
+:root {
+  /* Surfaces and text */
+  --bg: #0A0705;
+  --card: #15100C;
+  --card-2: #1D1611;
+  --line: #2C2119;
+  --ink: #F2ECE3;
+  --muted: #8E7F70;
+
+  /* Accents */
+  --gold: #E2B24C;
+  --gold-ink: #1A1206;
+  --win: #4FCB8C;
+  --loss: #E35A6B;
+
+  /* Tinted backgrounds */
+  --win-bg: rgba(79, 203, 140, .15);
+  --loss-bg: rgba(227, 90, 107, .17);
+  --draw-bg: rgba(142, 127, 112, .2);
+  --warn-bg: rgba(226, 178, 76, .12);
+  --scrim: rgba(0, 0, 0, .65);
+
+  /* Hero and "Start a game" glow */
+  --hero-glow: #241A12;
+  --start-glow: #2A1E12;
+
+  /* Fonts */
+  --font-ui: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  /* Corner radii */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-sheet: 24px;
+  --radius-pill: 999px;
+
+  /* Layout */
+  --max-width: 480px;
+  --gutter: 18px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Avatar ring colours, picked by player order */
+  --ring-1: #E35A6B;
+  --ring-2: #E2B24C;
+  --ring-3: #4FCB8C;
+  --ring-4: #5B8DEF;
+  --ring-5: #B07CE8;
+  --ring-6: #E8894A;
+  --ring-7: #4FC3CF;
+  --ring-8: #D96BB0;
+
+  color-scheme: dark;
+}

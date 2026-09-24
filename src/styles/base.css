@@ -1,0 +1,47 @@
+/* Page-wide basics, matching prototype.html */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  height: 100%;
+  background: var(--bg);
+  scroll-padding-top: var(--safe-top);
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.app {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Large money figures */
+.mono {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+
+.gold { color: var(--gold); }
+.win { color: var(--win); }
+.loss { color: var(--loss); }
+.even { color: var(--muted); }

@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Poker Night: prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* Dark card-room theme in both light and dark viewer settings, by design */
+:root, :root[data-theme="light"], :root[data-theme="dark"]{
+  --bg:#0A0705; --card:#15100C; --card-2:#1D1611; --line:#2C2119; --ink:#F2ECE3; --muted:#8E7F70;
+  --gold:#E2B24C; --gold-ink:#1A1206; --win:#4FCB8C; --loss:#E35A6B;
+  --win-bg:rgba(79,203,140,.15); --loss-bg:rgba(227,90,107,.17); --draw-bg:rgba(142,127,112,.2);
+  --warn-bg:rgba(226,178,76,.12); --scrim:rgba(0,0,0,.65);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --bg:#0A0705; } }
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;background:var(--bg);scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:'Outfit',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.app{max-width:480px;margin:0 auto;min-height:100vh;position:relative}
+.mono{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-weight:800;letter-spacing:-.01em}
+
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:12px 18px;min-height:52px}
+.back{background:none;border:0;color:var(--gold);font-weight:600;font-size:18px;padding:4px 0}
+.hdr-btn{background:var(--card);border:1px solid var(--line);color:var(--gold);border-radius:12px;padding:6px 14px;font-weight:600}
+.page-title{font-size:30px;font-weight:800;margin:0 2px 18px;letter-spacing:-.01em}
+
+main{padding:4px 18px 120px}
+.cap{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.sect{margin:26px 2px 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px}
+.hero{background:radial-gradient(120% 90% at 50% 0%,#241A12 0%,var(--card) 70%);border:1px solid var(--line);border-radius:22px;padding:22px 18px 20px;text-align:center;margin-bottom:12px}
+.hero .big{font-size:52px;line-height:1.05;margin:8px 0 10px}
+.hero .meta{display:flex;justify-content:center;gap:22px;color:var(--muted);font-size:15px}
+.hero .meta b{color:var(--ink);font-size:17px;font-weight:700}
+.split{display:flex;align-items:stretch;justify-content:center;gap:16px;margin-bottom:6px}
+.split>div:not(.divider){flex:1;min-width:0}
+.split .mono{font-size:clamp(28px,9vw,40px);line-height:1.1;margin-top:6px}
+.split .divider{width:1px;background:var(--line)}
+.gold{color:var(--gold)} .win{color:var(--win)} .loss{color:var(--loss)} .even{color:var(--muted)}
+
+.list{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left}
+.row:last-child{border-bottom:0}
+button.row:active{background:var(--card-2)}
+.grow{flex:1;min-width:0}
+.name{font-weight:600}
+.sub{color:var(--muted);font-size:14px}
+.who{display:flex;align-items:center;gap:12px;background:none;border:0;padding:0;text-align:left;flex:1;min-width:0}
+.acts{display:flex;gap:6px;flex:none}
+.val{font-weight:700;font-size:20px;text-align:right;white-space:nowrap}
+
+.av{--c:#E35A6B;width:44px;height:44px;flex:none;border-radius:50%;background:var(--card-2);border:2.5px solid var(--c);display:grid;place-items:center;font-size:22px;line-height:1}
+.av.sm{width:34px;height:34px;font-size:17px;border-width:2px}
+.av.xl{width:84px;height:84px;font-size:42px;border-width:3.5px}
+.av img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+.photo-row{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.photo-row .acts{flex-direction:column;align-items:stretch;flex:1}
+.photo-row label.pill{text-align:center;cursor:pointer}
+.photo-row input[type=file]{position:absolute;width:1px;height:1px;opacity:0}
+
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:15px 18px;font-weight:700;font-size:17px;text-align:center;margin-top:12px}
+.btn.primary{background:var(--gold);color:var(--gold-ink)}
+.btn.ghost{background:transparent;border:1.5px dashed var(--line);color:var(--ink)}
+.btn.quiet{background:none;color:var(--muted);font-weight:500;font-size:15px;padding:10px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.hint{color:var(--muted);font-size:14px;text-align:center;margin-top:8px}
+.pill{border:1px solid var(--line);background:var(--card-2);border-radius:999px;padding:7px 13px;font-weight:600;font-size:14px;white-space:nowrap}
+.pill.solid{background:var(--gold);border-color:var(--gold);color:var(--gold-ink)}
+.pill.paid{background:var(--win-bg);border-color:transparent;color:var(--win)}
+.out{background:none;border:0;padding:0;text-align:right}
+
+.start{display:flex;align-items:center;gap:14px;width:100%;background:radial-gradient(120% 120% at 0% 0%,#2A1E12 0%,var(--card) 65%);color:var(--ink);border:1px solid var(--line);border-radius:22px;padding:22px 20px;text-align:left}
+.start .big{font-size:26px;font-weight:800;line-height:1.1}
+.start .plus{width:52px;height:52px;border-radius:50%;background:var(--gold);color:var(--gold-ink);display:grid;place-items:center;font-size:30px;font-weight:700;flex:none}
+.start .amt-live{font-size:28px}
+.pulse{width:12px;height:12px;border-radius:50%;background:var(--win);flex:none;animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(79,203,140,.6)}70%{box-shadow:0 0 0 12px rgba(79,203,140,0)}100%{box-shadow:0 0 0 0 rgba(79,203,140,0)}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+
+.field{display:block;margin-bottom:14px}
+.field span{display:block;font-size:14px;color:var(--muted);margin:0 4px 6px}
+.field input{width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:17px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.picks{display:flex;flex-wrap:wrap;gap:8px}
+.pick{display:flex;align-items:center;gap:8px;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:4px 14px 4px 4px;font-weight:600}
+.pick[aria-pressed="true"]{border-color:var(--gold);background:rgba(226,178,76,.1)}
+.addrow{display:flex;gap:8px;margin-top:12px}
+.addrow input{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 14px}
+.addrow button{border:0;border-radius:14px;background:var(--gold);color:var(--gold-ink);padding:0 18px;font-weight:700}
+
+.notice{border-radius:16px;padding:14px 16px;margin-bottom:6px}
+.notice.ok{background:var(--win-bg);color:var(--win)}
+.notice.warn{background:var(--warn-bg);color:var(--gold)}
+.notice label{display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:600}
+.notice input{width:20px;height:20px;accent-color:var(--gold)}
+.pay{font-weight:600}
+.pay .arrow{color:var(--muted);font-weight:400}
+
+.profile{display:flex;align-items:center;gap:16px;margin:4px 2px 20px}
+.pname{font-size:28px;font-weight:800;line-height:1.1}
+.last5{display:flex;align-items:center;gap:10px;padding:14px 16px;margin-bottom:12px}
+.dots{display:flex;gap:6px;flex:1;justify-content:center}
+.dot{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700}
+.dot.W{background:var(--win-bg);color:var(--win)} .dot.L{background:var(--loss-bg);color:var(--loss)} .dot.D{background:var(--draw-bg);color:var(--muted)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.tile .tl{color:var(--muted);font-size:14px}
+.tile .tv{font-size:26px;font-weight:700;margin-top:4px;line-height:1.1}
+
+.lb{padding:12px 14px;border-bottom:1px solid var(--line)}
+.lb:last-child{border-bottom:0}
+.lb-top{display:flex;align-items:center;gap:10px}
+.rank{width:22px;color:var(--muted);font-weight:700;text-align:center}
+.track{position:relative;height:6px;background:var(--card-2);border-radius:3px;margin:10px 0 0 32px}
+.track::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--line)}
+.bar{position:absolute;top:0;bottom:0;border-radius:3px}
+.bar.pos{background:var(--win)} .bar.neg{background:var(--loss)}
+.empty{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;text-align:center;color:var(--muted)}
+
+nav.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(10,7,5,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0px);z-index:10}
+nav.tabs button{flex:1;background:none;border:0;padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:600;color:var(--muted)}
+nav.tabs button[aria-current="page"]{color:var(--gold)}
+nav.tabs svg{width:24px;height:24px}
+
+#sheet[hidden]{display:none}
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:20}
+.panel{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;padding:10px 18px calc(22px + env(safe-area-inset-bottom,0px));z-index:21;animation:up .2s ease-out;max-height:85vh;overflow-y:auto}
+@keyframes up{from{transform:translate(-50%,40px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@media (prefers-reduced-motion:reduce){.panel{animation:none}}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 14px}
+.panel h3{margin:0 0 14px;font-size:24px;font-weight:800}
+.amt{display:flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:16px;padding:8px 14px;font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:800;font-size:36px;background:var(--bg)}
+.amt:focus-within{border-color:var(--gold)}
+.amt input{border:0;background:none;width:100%;font:inherit;outline:none}
+.quick{display:flex;gap:8px;margin-top:10px}
+.quick button{flex:1}
+.err{color:var(--loss);font-size:14px;margin-top:8px;min-height:1em}
+.menu .btn{margin-top:8px;background:var(--card-2);color:var(--ink);font-weight:600}
+.menu .btn.danger{color:var(--loss)}
+.emojis{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:6px 0 4px}
+.emojis button{font-size:26px;background:var(--card-2);border:1.5px solid var(--line);border-radius:14px;padding:8px 0}
+.emojis button[aria-pressed="true"]{border-color:var(--gold)}
+
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--gold);color:var(--gold-ink);padding:10px 16px;border-radius:999px;font-weight:700;font-size:14px;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.qa{display:flex;gap:10px;margin-top:10px}
+.qa button{flex:1;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px;text-align:left}
+.qa .t{font-weight:700;color:var(--gold)}
+.month{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:26px 2px 10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:-6px 0 14px}
+.cashed{margin-top:12px}
+.cashed summary{display:flex;align-items:center;gap:10px;padding:10px 4px;cursor:pointer;list-style:none}
+.cashed summary::-webkit-details-marker{display:none}
+.cashed .chev{margin-left:auto;color:var(--muted);transition:transform .2s}
+.cashed[open] .chev{transform:rotate(180deg)}
+.danger-text{color:var(--loss)!important}
+.notes{width:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;resize:vertical;font-size:16px;line-height:1.4}
+.row.logrow{display:grid;grid-template-columns:auto minmax(0,1fr) 80px 80px;gap:8px}
+.logrow input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:16px}
+.ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toast{display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px)}
+.toast span{overflow:hidden;text-overflow:ellipsis}
+.toast.show.act{pointer-events:auto}
+.toast .undo{background:var(--gold-ink);color:var(--gold);border:0;border-radius:999px;padding:4px 12px;font-weight:700;font-size:14px}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top" id="top"></header>
+  <main id="main"></main>
+</div>
+<nav class="tabs" id="tabs" aria-label="Sections">
+  <button data-tab="games" onclick="go({v:'home'})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Games</button>
+  <button data-tab="players" onclick="go({v:'players'})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17.5 14.5c2.2.3 3.6 2 4 4.5"/></svg>Players</button>
+  <button data-tab="stats" onclick="go({v:'stats'})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V11M10 20V4M16 20v-6M22 20H2"/></svg>Stats</button>
+</nav>
+<div id="sheet" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const KEY = 'pokernight-prototype-v3';
+const RINGS = ['#E35A6B','#E2B24C','#4FCB8C','#5B8DEF','#B07CE8','#E8894A','#4FC3CF','#D96BB0'];
+const EMOJIS = ['🎰','🦈','🎲','👑','🃏','🚀','🐺','🦊','🔥','💎','🐍','🎩','🍀','⚡','🐻','🦉','🍕','🌵'];
+let S, R = {v:'home'}, PENDING = null, ACCEPT = false, EDIT = null, UNDO = null;
+
+/* ---------- helpers ---------- */
+const uid = () => Math.random().toString(36).slice(2, 9);
+const sum = a => a.reduce((x, y) => x + y, 0);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = c => { const d = Math.abs(c) / 100; return '$' + (Number.isInteger(d) ? d : d.toFixed(2)); };
+const sfmt = c => c > 0 ? '+' + fmt(c) : c < 0 ? '−' + fmt(c) : '$0';
+const cls = c => c > 0 ? 'win' : c < 0 ? 'loss' : 'even';
+const pad = n => String(n).padStart(2, '0');
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const fdate = d => new Date(d + 'T12:00').toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+const P = id => S.players.find(p => p.id === id) || {id, name:'Unknown', emoji:'❔'};
+const G = id => S.sessions.find(s => s.id === id);
+const inOf = e => sum(e.buyIns);
+const net = e => (e.cashOut ?? 0) - inOf(e);
+const av = (p, size) => `<span class="av${size ? ' ' + size : ''}" style="--c:${RINGS[Math.max(0, S.players.findIndex(x => x.id === p.id)) % RINGS.length]}" aria-hidden="true">${p.photo ? `<img src="${p.photo}" alt="">` : (p.emoji || '🃏')}</span>`;
+const completed = () => S.sessions.filter(s => s.status === 'completed').sort((a, b) => b.date.localeCompare(a.date));
+const randEmoji = () => { const used = new Set(S.players.map(p => p.emoji)); const free = EMOJIS.filter(e => !used.has(e)); const pool = free.length ? free : EMOJIS; return pool[Math.floor(Math.random() * pool.length)]; };
+
+function toast(msg, undo){
+  const t = document.getElementById('toast'); UNDO = undo || null;
+  t.innerHTML = `<span>${esc(msg)}</span>` + (undo ? `<button class="undo" onclick="doUndo()">Undo</button>` : '');
+  t.classList.toggle('act', !!undo); t.classList.add('show');
+  clearTimeout(toast.h); toast.h = setTimeout(() => { t.classList.remove('show', 'act'); UNDO = null; }, undo ? 4500 : 1800);
+}
+function doUndo(){ const u = UNDO; UNDO = null; if (u){ u(); toast('Undone'); } }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+function load(){
+  try {
+    const r = localStorage.getItem(KEY);
+    if (r){ S = JSON.parse(r); S.sessions.forEach(x => { if (x.stakes === '10p/20p') x.stakes = '0.10/0.20'; }); if (S.players.length || S.sessions.length) return; }
+  } catch(e){}
+  S = testData(); save(); // start with sample games when there's no data yet
+}
+
+/* ---------- settle-up: biggest loser pays biggest winner ---------- */
+function settle(entries){
+  const bal = entries.map(e => ({id:e.playerId, n:net(e)}));
+  const winners = bal.filter(b => b.n > 0).sort((a, b) => b.n - a.n).map(b => ({...b}));
+  const losers = bal.filter(b => b.n < 0).map(b => ({id:b.id, n:-b.n})).sort((a, b) => b.n - a.n);
+  const out = []; let i = 0, j = 0;
+  while (i < losers.length && j < winners.length){
+    const a = Math.min(losers[i].n, winners[j].n);
+    if (a > 0) out.push({from:losers[i].id, to:winners[j].id, amount:a, paid:false});
+    losers[i].n -= a; winners[j].n -= a;
+    if (losers[i].n === 0) i++;
+    if (winners[j].n === 0) j++;
+  }
+  return out;
+}
+
+/* ---------- starting data ---------- */
+function seed(){ return {players:[], sessions:[]}; }
+/* 15 sample games for testing */
+const TEST_DATA = {"players": [["mike", "Mike", "🎰"], ["jess", "Jess", "🦈"], ["dan", "Dan", "🎲"], ["priya", "Priya", "👑"], ["tom", "Tom", "🃏"], ["alex", "Alex", "🚀"], ["marcus", "Marcus", "🐺"], ["sofia", "Sofia", "🦊"]], "games": [{"date": "2026-06-05", "loc": "Tom's garage", "rows": [["priya", [20, 20, 20], 58.5], ["alex", [20], 0.0], ["mike", [20], 69.5], ["tom", [20, 20], 67.0], ["dan", [20, 20, 20], 5.0]], "dur": "2h 42m", "note": ""}, {"date": "2026-06-12", "loc": "Mike's kitchen", "rows": [["marcus", [20], 4.5], ["jess", [20], 34.5], ["dan", [20], 16.5], ["priya", [20, 20], 45.5], ["mike", [20], 48.0], ["tom", [20, 20], 11.0]], "dur": "3h 32m", "note": ""}, {"date": "2026-06-20", "loc": "Mike's kitchen", "rows": [["tom", [20], 62.0], ["priya", [20, 20, 20], 0.0], ["dan", [20], 27.5], ["alex", [20, 20], 48.5], ["jess", [20, 10], 32.0]], "dur": "4h 26m", "note": "Dan's birthday game. Played until 3am."}, {"date": "2026-06-26", "loc": "Dan's apartment", "rows": [["priya", [20], 89.0], ["alex", [20], 3.5], ["mike", [20], 0.0], ["tom", [20], 10.5], ["dan", [20, 20], 17.0]], "dur": "4h 10m", "note": ""}, {"date": "2026-07-03", "loc": "Priya's patio", "rows": [["priya", [20], 20], ["marcus", [20], 11.0], ["tom", [20, 20], 16.0], ["dan", [20], 83.0], ["mike", [20, 10], 0.0]], "dur": "4h 17m", "note": ""}, {"date": "2026-07-10", "loc": "Priya's patio", "rows": [["tom", [20], 0.0], ["dan", [20], 0.0], ["jess", [20], 47.5], ["mike", [20], 67.5], ["marcus", [20, 20], 4.5], ["alex", [20], 20.5]], "dur": "3h 58m", "note": ""}, {"date": "2026-07-17", "loc": "Jess's place", "rows": [["jess", [20, 10], 24.5], ["mike", [20, 20], 38.0], ["priya", [20], 31.5], ["alex", [20], 23.5], ["tom", [20], 0.0], ["sofia", [20], 32.5]], "dur": "3h 12m", "note": "First game with Sofia."}, {"date": "2026-07-24", "loc": "Jess's place", "rows": [["alex", [20], 1.0], ["sofia", [20], 14.5], ["jess", [20, 20], 65.5], ["tom", [20], 46.5], ["marcus", [20, 10], 50.0], ["mike", [20, 20, 20], 12.5]], "dur": "3h 20m", "note": ""}, {"date": "2026-07-31", "loc": "Tom's garage", "rows": [["mike", [20, 20], 0.0], ["priya", [20], 86.0], ["alex", [20], 28.5], ["dan", [20, 20], 4.5], ["sofia", [20], 0.0], ["tom", [20], 41.0]], "dur": "5h 17m", "note": ""}, {"date": "2026-08-08", "loc": "Marcus's basement", "rows": [["sofia", [20, 20, 20], 42.5], ["alex", [20], 8.5], ["dan", [20], 9.5], ["jess", [20], 35.0], ["tom", [20], 18.5], ["mike", [20], 46.0]], "dur": "4h 27m", "note": "Power went out for 20 minutes, played by flashlight."}, {"date": "2026-08-15", "loc": "Priya's patio", "rows": [["marcus", [20], 14.0], ["sofia", [20], 0.0], ["tom", [20], 64.0], ["jess", [20], 62.0], ["alex", [20], 0.0], ["dan", [20, 20], 0.0]], "dur": "2h 55m", "note": ""}, {"date": "2026-08-21", "loc": "Tom's garage", "rows": [["mike", [20], 23.0], ["marcus", [20], 16.5], ["sofia", [20, 20], 40.5], ["priya", [20, 20], 46.5], ["dan", [20], 13.0], ["tom", [20], 15.5]], "dur": "5h 21m", "note": "Chip count came up $5 short. Nobody could find it."}, {"date": "2026-08-28", "loc": "Tom's garage", "rows": [["priya", [20], 8.0], ["alex", [20, 20], 37.0], ["dan", [20], 30.5], ["mike", [20], 24.5]], "dur": "3h 27m", "note": ""}, {"date": "2026-09-05", "loc": "Marcus's basement", "rows": [["marcus", [20, 20, 20], 44.0], ["dan", [20, 10], 0.0], ["priya", [20, 10], 97.5], ["jess", [20], 0.0], ["sofia", [20], 24.0], ["tom", [20], 14.5]], "dur": "4h 18m", "note": "Jess won three all-ins in a row."}, {"date": "2026-09-11", "loc": "Priya's patio", "rows": [["dan", [20, 10], 0.0], ["tom", [20, 20], 17.5], ["marcus", [20], 16.0], ["alex", [20, 20], 0.0], ["priya", [20], 88.0], ["sofia", [20, 20], 68.5]], "dur": "2h 41m", "note": ""}]};
+function testData(){
+  const players = TEST_DATA.players.map(([id, name, emoji]) => ({id, name, emoji}));
+  const n = TEST_DATA.games.length;
+  const sessions = TEST_DATA.games.map((g, gi) => {
+    const entries = g.rows.map(([pid, buys, out]) => ({playerId:pid, buyIns:buys.map(b => Math.round(b * 100)), cashOut:Math.round(out * 100)}));
+    const settlements = settle(entries).map((x, i) => ({...x, paid:!(gi >= n - 2 && i < 2)}));
+    return {id:uid(), date:g.date, location:g.loc, stakes:'0.25/0.50', buyIn:2000, status:'completed', entries, settlements, notes:g.note, duration:g.dur};
+  });
+  return {players, sessions};
+}
+
+/* ---------- routing ---------- */
+let F = null, OPEN_CASHED = false, WAKE = null;
+function go(r){
+  R = r; ACCEPT = false;
+  if (r.v === 'new' || r.v === 'log') initForm(r.v, r.from);
+  if (r.v === 'live') OPEN_CASHED = false;
+  render(); window.scrollTo(0, 0);
+}
+function render(){
+  const views = {home:vHome, new:vNew, log:vLog, live:vLive, settle:vSettle, detail:vDetail, players:vPlayers, player:vPlayer, stats:vStats};
+  const v = views[R.v]();
+  const back = v.back ? `<button class="back" onclick='go(${JSON.stringify(v.back)})'>← Back</button>` : '<span></span>';
+  document.getElementById('top').innerHTML = back + (v.action || '');
+  document.getElementById('main').innerHTML = (v.noTitle ? '' : `<h1 class="page-title">${esc(v.title)}</h1>`) + v.html;
+  const tab = {players:'players', player:'players', stats:'stats'}[R.v] || 'games';
+  document.querySelectorAll('#tabs button').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current'));
+  document.title = v.title + ': Poker Night';
+  if (R.v === 'log') updateLogBalance();
+  wake(R.v === 'live');
+}
+
+/* ---------- keep the screen awake during a live game ---------- */
+async function wake(on){
+  try {
+    if (on && !WAKE && 'wakeLock' in navigator){ WAKE = await navigator.wakeLock.request('screen'); WAKE.addEventListener('release', () => { WAKE = null; }); }
+    else if (!on && WAKE){ await WAKE.release(); WAKE = null; }
+  } catch(e){ /* not supported here; ignore */ }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && R.v === 'live') wake(true); });
+
+/* ---------- small game helpers ---------- */
+const potOf = s => sum(s.entries.flatMap(e => e.buyIns));
+const cashedOf = s => sum(s.entries.filter(e => e.cashOut != null).map(e => e.cashOut));
+function elapsed(s){
+  if (!s.startedAt) return '';
+  const m = Math.max(0, Math.floor((Date.now() - s.startedAt) / 60000));
+  return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
+}
+setInterval(() => { const el = document.getElementById('elapsed'); const s = S && S.sessions.find(x => x.status === 'active'); if (el && s) el.textContent = elapsed(s); }, 30000);
+function recentLocations(){
+  const seen = []; [...S.sessions].sort((a, b) => b.date.localeCompare(a.date)).forEach(s => { if (s.location && !seen.includes(s.location)) seen.push(s.location); });
+  return seen.slice(0, 5);
+}
+/* run an action on a game, with an Undo toast that restores the game as it was */
+function act(sid, fn, msg){
+  const i = S.sessions.findIndex(x => x.id === sid), snap = JSON.stringify(S.sessions[i]);
+  fn(); save(); render();
+  toast(msg, () => { const j = S.sessions.findIndex(x => x.id === sid); if (j > -1){ S.sessions[j] = JSON.parse(snap); save(); render(); } });
+}
+
+/* ---------- games list ---------- */
+function gameRow(s){
+  const top = [...s.entries].sort((a, b) => net(b) - net(a))[0];
+  const unpaid = s.settlements.filter(x => !x.paid).length;
+  const winner = top && net(top) > 0 ? `${av(P(top.playerId), 'sm')}<div style="text-align:right;min-width:0"><div class="name" style="font-size:14px">${esc(P(top.playerId).name)}</div><div class="win" style="font-weight:700;font-size:15px">${sfmt(net(top))}</div></div>` : '';
+  return `<button class="row" onclick="go({v:'detail',id:'${s.id}'})"><div class="grow"><div class="name">${fdate(s.date)}</div><div class="sub">${esc(s.location || 'Home game')}, ${s.entries.length} players, ${fmt(potOf(s))} pot${unpaid ? `, <span class="loss">${unpaid} unpaid</span>` : ''}</div></div>${winner}</button>`;
+}
+function vHome(){
+  const active = S.sessions.find(s => s.status === 'active');
+  const done = completed();
+  let h = '';
+  if (active){
+    const playing = active.entries.filter(e => e.cashOut == null).length;
+    h += `<button class="start" onclick="go({v:'live',id:'${active.id}'})"><span class="pulse"></span><div class="grow"><div class="big">Game in progress</div><div class="sub">${esc(active.location || 'Home game')}, ${playing} still playing${active.startedAt ? `, ${elapsed(active)}` : ''}</div></div><div class="mono gold amt-live">${fmt(potOf(active))}</div></button>`;
+  } else {
+    h += `<button class="start" onclick="go({v:'new'})"><div class="grow"><div class="big">Start a game</div><div class="sub">Pick players, set the buy-in, deal.</div></div><span class="plus" aria-hidden="true">+</span></button>`;
+  }
+  h += `<div class="qa">`;
+  if (!active && done[0]) h += `<button onclick="go({v:'new',from:'${done[0].id}'})"><div class="t">↻ Run it back</div><div class="sub">Same players as ${fdate(done[0].date)}</div></button>`;
+  h += `<button onclick="go({v:'log'})"><div class="t">✎ Log a finished game</div><div class="sub">Enter final totals</div></button></div>`;
+
+  const owed = []; done.forEach(s => s.settlements.forEach((x, i) => { if (!x.paid) owed.push({s, x, i}); }));
+  if (owed.length){
+    h += `<div class="month"><span class="cap">Still owed</span><span class="sub">${fmt(sum(owed.map(o => o.x.amount)))} total</span></div><div class="list">` +
+      owed.map(o => `<div class="row">${av(P(o.x.from), 'sm')}<div class="grow"><div class="pay">${esc(P(o.x.from).name)} <span class="arrow">owes</span> ${esc(P(o.x.to).name)}</div><div class="sub">${fdate(o.s.date)}</div></div><div class="val gold" style="font-size:17px">${fmt(o.x.amount)}</div><button class="pill" onclick="togglePaid('${o.s.id}',${o.i})">Mark paid</button></div>`).join('') + `</div>`;
+  }
+
+  if (!done.length) h += `<div class="cap sect">Past games</div><div class="empty">No finished games yet. Start one above, or log a game you've already played.</div>`;
+  else {
+    const groups = {}; done.forEach(s => { (groups[s.date.slice(0, 7)] ||= []).push(s); });
+    Object.keys(groups).sort().reverse().forEach(k => {
+      const gs = groups[k], label = new Date(k + '-15T12:00').toLocaleDateString('en-US', {month:'long', year:'numeric'});
+      h += `<div class="month"><span class="cap">${label}</span><span class="sub">${gs.length} game${gs.length === 1 ? '' : 's'}, ${fmt(sum(gs.map(potOf)))} in pots</span></div><div class="list">${gs.map(gameRow).join('')}</div>`;
+    });
+  }
+  return {title:'Poker Night', html:h};
+}
+
+/* ---------- new game & log a finished game (shared form) ---------- */
+function initForm(mode, fromId){
+  const src = fromId ? G(fromId) : null;
+  F = {mode, sel:new Set(src ? src.entries.map(e => e.playerId) : []), date:today(), location:src ? src.location : '',
+       stakes:src ? src.stakes : '0.25/0.50', buyIn:src ? src.buyIn / 100 : 20, amounts:{}};
+}
+function formTop(){
+  const locs = recentLocations();
+  return `<label class="field"><span>Date</span><input type="date" value="${F.date}" oninput="F.date=this.value"></label>
+  <label class="field"><span>Where</span><input id="loc" placeholder="e.g. Mike's kitchen" value="${esc(F.location)}" oninput="F.location=this.value"></label>
+  ${locs.length ? `<div class="chips">${locs.map(l => `<button class="pill" data-l="${esc(l)}" onclick="F.location=this.dataset.l;document.getElementById('loc').value=F.location">${esc(l)}</button>`).join('')}</div>` : ''}`;
+}
+function formPlayers(){
+  return `<div class="cap sect">Who played (${F.sel.size})</div>
+  <div class="picks">${S.players.map(p => `<button class="pick" aria-pressed="${F.sel.has(p.id)}" onclick="togglePick('${p.id}')">${av(p, 'sm')}${esc(p.name)}</button>`).join('')}</div>
+  <div class="addrow"><input id="newname" placeholder="Add someone new" onkeydown="if(event.key==='Enter')addPick()"><button onclick="addPick()">Add</button></div>`;
+}
+function vNew(){
+  let h = formTop() + `<div class="two"><label class="field"><span>Stakes</span><input value="${esc(F.stakes)}" oninput="F.stakes=this.value"></label>
+  <label class="field"><span>Buy-in ($)</span><input type="number" inputmode="decimal" min="1" value="${F.buyIn}" oninput="F.buyIn=parseFloat(this.value)||0"></label></div>` + formPlayers();
+  h += `<button class="btn primary" ${F.sel.size < 2 || F.buyIn <= 0 ? 'disabled' : ''} onclick="startGame()">Start game</button>
+  <div class="hint">${F.sel.size < 2 ? 'Pick at least two players.' : `Everyone starts with a ${fmt(Math.round(F.buyIn * 100))} buy-in.`}</div>`;
+  return {title:'New game', back:{v:'home'}, html:h};
+}
+function togglePick(id){ F.sel.has(id) ? F.sel.delete(id) : F.sel.add(id); render(); }
+function addPick(){
+  const el = document.getElementById('newname'); const name = el.value.trim(); if (!name) return;
+  let p = S.players.find(x => x.name.toLowerCase() === name.toLowerCase());
+  if (!p){ p = {id:uid(), name, emoji:randEmoji()}; S.players.push(p); save(); }
+  F.sel.add(p.id); render();
+}
+function startGame(){
+  if (S.sessions.some(s => s.status === 'active')) { toast('Finish the current game first'); return; }
+  const b = Math.round(F.buyIn * 100);
+  const s = {id:uid(), date:F.date, location:F.location.trim(), stakes:F.stakes.trim(), buyIn:b, status:'active', startedAt:Date.now(),
+    entries:[...F.sel].map(pid => ({playerId:pid, buyIns:[b], cashOut:null})), settlements:[], notes:''};
+  S.sessions.push(s); save(); go({v:'live', id:s.id}); toast('Game started. Good luck.');
+}
+
+function vLog(){
+  let h = formTop() + `<label class="field"><span>Stakes</span><input value="${esc(F.stakes)}" oninput="F.stakes=this.value"></label>` + formPlayers();
+  if (F.sel.size){
+    h += `<div class="month"><span class="cap">Totals</span><span class="sub">In includes all rebuys</span></div><div class="list">` + [...F.sel].map(pid => {
+      const a = F.amounts[pid] || (F.amounts[pid] = {in:'', out:''}), n = esc(P(pid).name);
+      return `<div class="row logrow">${av(P(pid), 'sm')}<div class="name ell">${n}</div>
+        <input type="number" inputmode="decimal" min="0" step="0.01" placeholder="In $" aria-label="${n} total in" value="${a.in}" oninput="setAmt('${pid}','in',this.value)">
+        <input type="number" inputmode="decimal" min="0" step="0.01" placeholder="Out $" aria-label="${n} cashed out" value="${a.out}" oninput="setAmt('${pid}','out',this.value)"></div>`;
+    }).join('') + `</div>`;
+  }
+  h += `<div id="logbal" style="margin-top:12px"></div><button class="btn primary" id="logsave" onclick="saveLog()">Save game</button><div class="hint" id="loghint"></div>`;
+  return {title:'Log a finished game', back:{v:'home'}, html:h};
+}
+function setAmt(pid, k, v){ F.amounts[pid][k] = v; updateLogBalance(); }
+function logRows(){ return [...F.sel].map(pid => { const a = F.amounts[pid] || {}; return {pid, in:parseFloat(a.in), out:parseFloat(a.out)}; }); }
+function updateLogBalance(){
+  const box = document.getElementById('logbal'), btn = document.getElementById('logsave'), hint = document.getElementById('loghint'); if (!box) return;
+  const rows = logRows(), missing = rows.filter(r => isNaN(r.in) || isNaN(r.out) || r.in < 0 || r.out < 0).length;
+  let ok = F.sel.size >= 2 && !missing;
+  hint.textContent = F.sel.size < 2 ? 'Pick at least two players.' : missing ? `Fill in both amounts for ${missing} more player${missing === 1 ? '' : 's'}.` : '';
+  if (F.sel.size < 2 || missing){ box.innerHTML = ''; }
+  else {
+    const tin = Math.round(sum(rows.map(r => r.in)) * 100), tout = Math.round(sum(rows.map(r => r.out)) * 100), d = tout - tin;
+    if (d === 0) box.innerHTML = `<div class="notice ok"><strong>Balanced.</strong> ${fmt(tin)} in, ${fmt(tout)} out.</div>`;
+    else { box.innerHTML = `<div class="notice warn"><strong>Cash-outs are ${fmt(d)} ${d < 0 ? 'short of' : 'over'} the buy-ins.</strong> ${fmt(tin)} in, ${fmt(tout)} out.<label><input type="checkbox" ${ACCEPT ? 'checked' : ''} onchange="ACCEPT=this.checked;updateLogBalance()">Save with this difference</label></div>`; ok = ok && ACCEPT; }
+  }
+  btn.disabled = !ok;
+}
+function saveLog(){
+  const entries = logRows().map(r => ({playerId:r.pid, buyIns:[Math.round(r.in * 100)], cashOut:Math.round(r.out * 100)}));
+  const s = {id:uid(), date:F.date, location:F.location.trim(), stakes:F.stakes.trim(), buyIn:2000, status:'completed', entries, settlements:settle(entries), notes:''};
+  S.sessions.push(s); save(); go({v:'detail', id:s.id}); toast('Game saved');
+}
+
+/* ---------- live game ---------- */
+function liveRow(s, e){
+  const p = P(e.playerId), n = net(e);
+  const sub = `In ${fmt(inOf(e))}${e.buyIns.length > 1 ? `, ${e.buyIns.length} buy-ins` : ''}`;
+  const acts = e.cashOut == null
+    ? `<button class="pill" onclick="rebuy('${s.id}','${p.id}')" aria-label="Rebuy ${esc(p.name)}">+${fmt(s.buyIn)}</button><button class="pill solid" onclick="cashOut('${s.id}','${p.id}')">Cash out</button>`
+    : `<button class="out" onclick="cashOut('${s.id}','${p.id}')" aria-label="Edit cash-out for ${esc(p.name)}"><div class="val">${fmt(e.cashOut)}</div><div class="sub ${cls(n)}" style="font-weight:600">${sfmt(n)}</div></button>`;
+  return `<div class="row"><button class="who" onclick="playerMenu('${s.id}','${p.id}')">${av(p)}<div class="grow"><div class="name">${esc(p.name)}</div><div class="sub">${sub}</div></div></button><div class="acts">${acts}</div></div>`;
+}
+function vLive(){
+  const s = G(R.id); if (!s) { R = {v:'home'}; return vHome(); }
+  const pot = potOf(s), cashed = cashedOf(s), remaining = pot - cashed;
+  const playingE = s.entries.filter(e => e.cashOut == null), outE = s.entries.filter(e => e.cashOut != null);
+  const top = outE.length
+    ? `<div class="split"><div><div class="cap">Total pot</div><div class="mono gold">${fmt(pot)}</div></div><div class="divider"></div><div><div class="cap">Still in play</div><div class="mono ${remaining < 0 ? 'loss' : 'win'}">${remaining < 0 ? '−' : ''}${fmt(remaining)}</div></div></div><div class="sub" style="margin:4px 0 10px">${fmt(cashed)} already cashed out${remaining < 0 ? '. Cash-outs are more than the pot, check the amounts.' : ''}</div>`
+    : `<div class="cap">In the pot</div><div class="mono big gold">${fmt(pot)}</div>`;
+  let h = `<section class="hero">${top}<div class="meta"><span><b>${playingE.length}</b> of ${s.entries.length} playing</span><span><b>${sum(s.entries.map(e => e.buyIns.length))}</b> buy-ins</span>${s.startedAt ? `<span>⏱ <b id="elapsed">${elapsed(s)}</b></span>` : ''}</div></section>`;
+  h += playingE.length ? `<div class="list">${playingE.map(e => liveRow(s, e)).join('')}</div>` : `<div class="empty">Everyone has cashed out.</div>`;
+  if (outE.length){
+    const open = OPEN_CASHED || !playingE.length;
+    h += `<details class="cashed" ${open ? 'open' : ''} ontoggle="OPEN_CASHED=this.open"><summary><span class="cap">Cashed out (${outE.length})</span><span class="sub">${fmt(cashed)}</span><span class="chev" aria-hidden="true">▾</span></summary><div class="list">${outE.map(e => liveRow(s, e)).join('')}</div></details>`;
+  }
+  h += `<button class="btn ghost" onclick="addPlayerSheet('${s.id}')">Add a player</button>`;
+  h += `<button class="btn primary" ${playingE.length ? 'disabled' : ''} onclick="go({v:'settle',id:'${s.id}'})">Settle up</button>`;
+  h += `<div class="hint">${playingE.length ? 'Cash everyone out to settle up. Tap a name for more options.' : 'Ready to settle.'}</div>`;
+  h += `<button class="btn quiet danger-text" onclick="confirmDelete('${s.id}')">Cancel this game</button>`;
+  return {title:`${s.location || 'Live game'}`, back:{v:'home'}, html:h};
+}
+function entry(sid, pid){ return G(sid).entries.find(e => e.playerId === pid); }
+function rebuy(sid, pid){ const s = G(sid); act(sid, () => entry(sid, pid).buyIns.push(s.buyIn), `${P(pid).name} rebought for ${fmt(s.buyIn)}`); }
+function cashOut(sid, pid){
+  const s = G(sid), e = entry(sid, pid);
+  let init = e.cashOut != null ? e.cashOut / 100 : '', note = '';
+  if (e.cashOut == null && s.entries.filter(x => x.cashOut == null).length === 1){
+    const rem = potOf(s) - cashedOf(s);
+    if (rem >= 0){ init = rem / 100; note = "Last player, so this is pre-filled with what's left in play."; }
+  }
+  amountSheet(`Cash out ${P(pid).name}`, 'Save cash-out', init, null, c => act(sid, () => { entry(sid, pid).cashOut = c; }, `${P(pid).name} cashed out ${fmt(c)}`), note);
+}
+function playerMenu(sid, pid){
+  const e = entry(sid, pid), p = P(pid);
+  let b = `<div class="grab"></div><h3>${esc(p.name)}</h3><div class="menu">`;
+  b += `<button class="btn" onclick="closeSheet();customBuy('${sid}','${pid}')">Add a custom buy-in</button>`;
+  if (e.buyIns.length > 1) b += `<button class="btn" onclick="undoBuy('${sid}','${pid}')">Remove last buy-in (${fmt(e.buyIns[e.buyIns.length-1])})</button>`;
+  if (e.cashOut != null) b += `<button class="btn" onclick="backIn('${sid}','${pid}')">Put back in the game</button>`;
+  b += `<button class="btn danger" onclick="removeFromGame('${sid}','${pid}')">Remove from this game</button>`;
+  b += `<button class="btn quiet" onclick="closeSheet()">Cancel</button></div>`;
+  sheet(b);
+}
+function customBuy(sid, pid){ amountSheet(`Buy-in for ${P(pid).name}`, 'Add buy-in', '', [5,10,20,50], c => { if (c > 0) act(sid, () => entry(sid, pid).buyIns.push(c), `Added ${fmt(c)} for ${P(pid).name}`); }); }
+function undoBuy(sid, pid){ closeSheet(); act(sid, () => entry(sid, pid).buyIns.pop(), `Removed a buy-in for ${P(pid).name}`); }
+function backIn(sid, pid){ closeSheet(); act(sid, () => { entry(sid, pid).cashOut = null; }, `${P(pid).name} is back in`); }
+function removeFromGame(sid, pid){ closeSheet(); act(sid, () => { const s = G(sid); s.entries = s.entries.filter(e => e.playerId !== pid); }, `${P(pid).name} removed from game`); }
+function addPlayerSheet(sid){
+  const s = G(sid), inGame = new Set(s.entries.map(e => e.playerId));
+  const avail = S.players.filter(p => !inGame.has(p.id));
+  let b = `<div class="grab"></div><h3>Add a player</h3>`;
+  if (avail.length) b += `<div class="picks">${avail.map(p => `<button class="pick" onclick="joinGame('${sid}','${p.id}')">${av(p, 'sm')}${esc(p.name)}</button>`).join('')}</div>`;
+  b += `<div class="addrow"><input id="joinname" placeholder="Someone new" onkeydown="if(event.key==='Enter')joinNew('${sid}')"><button onclick="joinNew('${sid}')">Add</button></div><div class="hint">They start with a ${fmt(s.buyIn)} buy-in.</div>`;
+  sheet(b);
+}
+function joinGame(sid, pid){ closeSheet(); const s = G(sid); act(sid, () => s.entries.push({playerId:pid, buyIns:[s.buyIn], cashOut:null}), `${P(pid).name} joined`); }
+function joinNew(sid){ const name = document.getElementById('joinname').value.trim(); if (!name) return; const p = {id:uid(), name, emoji:randEmoji()}; S.players.push(p); joinGame(sid, p.id); }
+
+/* ---------- settle & results ---------- */
+function resultsHtml(s){
+  return `<div class="list">` + [...s.entries].sort((a, b) => net(b) - net(a)).map(e => {
+    const p = P(e.playerId), n = net(e);
+    return `<button class="row" onclick="go({v:'player',id:'${p.id}'})">${av(p)}<div class="grow"><div class="name">${esc(p.name)}</div><div class="sub">In ${fmt(inOf(e))}, out ${fmt(e.cashOut ?? 0)}</div></div><div class="val ${cls(n)}">${sfmt(n)}</div></button>`;
+  }).join('') + `</div>`;
+}
+function paymentsHtml(s){
+  if (!s.settlements.length) return `<div class="empty">No payments needed. Everyone broke even.</div>`;
+  return `<div class="list">` + s.settlements.map((x, i) => `<div class="row">${av(P(x.from), 'sm')}<div class="grow pay">${esc(P(x.from).name)} <span class="arrow">pays</span> ${esc(P(x.to).name)}<div class="val gold" style="text-align:left;margin-top:2px">${fmt(x.amount)}</div></div><button class="pill ${x.paid ? 'paid' : ''}" aria-pressed="${x.paid}" onclick="togglePaid('${s.id}',${i})">${x.paid ? 'Paid ✓' : 'Mark paid'}</button></div>`).join('') + `</div>`;
+}
+function togglePaid(sid, i){
+  const x = G(sid).settlements[i];
+  act(sid, () => { x.paid = !x.paid; }, x.paid ? 'Marked unpaid' : `${P(x.from).name} paid ${P(x.to).name}`);
+}
+function balanceHtml(s, editable){
+  const tin = sum(s.entries.map(inOf)), tout = sum(s.entries.map(e => e.cashOut ?? 0)), d = tout - tin;
+  if (d === 0) return `<div class="notice ok"><strong>Balanced.</strong> ${fmt(tin)} in, ${fmt(tout)} out.</div>`;
+  return `<div class="notice warn"><strong>Cash-outs are ${fmt(d)} ${d < 0 ? 'short of' : 'over'} the buy-ins.</strong> ${fmt(tin)} in, ${fmt(tout)} out. ${editable ? 'Go back and fix a cash-out, or complete anyway.' : ''}${editable ? `<label><input type="checkbox" ${ACCEPT ? 'checked' : ''} onchange="ACCEPT=this.checked;render()">Complete with this difference</label>` : ''}</div>`;
+}
+function vSettle(){
+  const s = G(R.id); if (!s) { R = {v:'home'}; return vHome(); }
+  const fresh = settle(s.entries);
+  fresh.forEach(x => { const old = s.settlements.find(o => o.from === x.from && o.to === x.to && o.amount === x.amount); if (old) x.paid = old.paid; });
+  s.settlements = fresh;
+  const d = sum(s.entries.map(e => e.cashOut ?? 0)) - potOf(s);
+  let h = balanceHtml(s, true);
+  h += `<div class="cap sect">Results</div>` + resultsHtml(s);
+  h += `<div class="cap sect">Who pays whom (${s.settlements.length})</div>` + paymentsHtml(s);
+  h += `<button class="btn primary" ${d !== 0 && !ACCEPT ? 'disabled' : ''} onclick="completeGame('${s.id}')">Complete game</button>`;
+  h += `<button class="btn quiet" onclick="go({v:'live',id:'${s.id}'})">Back to the game</button>`;
+  return {title:'Settle up', back:{v:'live', id:s.id}, html:h};
+}
+function completeGame(sid){
+  const s = G(sid); s.status = 'completed';
+  if (s.startedAt && Date.now() - s.startedAt >= 60000) s.duration = elapsed(s);
+  save(); go({v:'detail', id:sid}); toast('Game saved');
+}
+
+function vDetail(){
+  const s = G(R.id); if (!s) { R = {v:'home'}; return vHome(); }
+  const pot = potOf(s), unpaid = s.settlements.filter(x => !x.paid).length;
+  let h = `<div class="sub" style="margin:-12px 2px 14px">${esc(s.location || 'Home game')}${s.stakes ? `, ${esc(s.stakes)}` : ''}${s.duration ? `, played for ${s.duration}` : ''}</div>`;
+  h += `<section class="hero"><div class="cap">Total pot</div><div class="mono big gold">${fmt(pot)}</div><div class="meta"><span><b>${s.entries.length}</b> players</span><span>${unpaid ? `<b class="loss">${unpaid}</b> unpaid` : '<b class="win">All settled</b>'}</span></div></section>`;
+  if (sum(s.entries.map(e => e.cashOut ?? 0)) !== pot) h += balanceHtml(s, false);
+  h += `<div class="cap sect">Results</div>` + resultsHtml(s);
+  h += `<div class="cap sect">Payments</div>` + paymentsHtml(s);
+  h += `<div class="cap sect">Notes</div><textarea class="notes" rows="3" placeholder="Anything worth remembering about this game" oninput="G('${s.id}').notes=this.value;save()">${esc(s.notes || '')}</textarea>`;
+  h += `<button class="btn primary" onclick="shareSheet('${s.id}')">Share results</button>`;
+  h += `<button class="btn quiet" onclick="reopen('${s.id}')">Reopen game to edit</button>`;
+  h += `<button class="btn quiet danger-text" onclick="confirmDelete('${s.id}')">Delete game</button>`;
+  return {title:fdate(s.date), back:{v:'home'}, html:h};
+}
+function reopen(sid){
+  if (S.sessions.some(s => s.status === 'active' && s.id !== sid)) { toast('Finish the current game first'); return; }
+  G(sid).status = 'active'; save(); go({v:'live', id:sid});
+}
+
+/* ---------- delete with undo ---------- */
+function confirmDelete(sid){
+  const active = G(sid).status === 'active';
+  sheet(`<div class="grab"></div><h3>${active ? 'Cancel this game?' : 'Delete this game?'}</h3><p class="sub" style="font-size:16px;margin:0 0 6px">${active ? 'All buy-ins and cash-outs from this game will be removed.' : 'It will be removed from history and from everyone&#39;s stats.'}</p>
+  <div class="menu"><button class="btn danger" onclick="deleteGame('${sid}')">${active ? 'Cancel game' : 'Delete game'}</button><button class="btn quiet" onclick="closeSheet()">Keep it</button></div>`);
+}
+function deleteGame(sid){
+  const i = S.sessions.findIndex(x => x.id === sid), removed = S.sessions.splice(i, 1)[0];
+  save(); closeSheet(); go({v:'home'});
+  toast(removed.status === 'active' ? 'Game cancelled' : 'Game deleted', () => { S.sessions.splice(i, 0, removed); save(); render(); });
+}
+
+/* ---------- share results ---------- */
+function shareText(s){
+  const lines = [`Poker night, ${fdate(s.date)}${s.location ? ` at ${s.location}` : ''}`, `Pot: ${fmt(potOf(s))}`, '', 'Results:'];
+  [...s.entries].sort((a, b) => net(b) - net(a)).forEach(e => lines.push(`${P(e.playerId).name}: ${sfmt(net(e)).replace('−', '-')}`));
+  if (s.settlements.length){ lines.push('', 'Payments:'); s.settlements.forEach(x => lines.push(`${P(x.from).name} pays ${P(x.to).name} ${fmt(x.amount)}${x.paid ? ' (paid)' : ''}`)); }
+  if (s.notes) lines.push('', s.notes);
+  return lines.join('\n');
+}
+function shareSheet(sid){
+  const text = shareText(G(sid));
+  sheet(`<div class="grab"></div><h3>Share results</h3><textarea id="sharetext" class="notes" rows="10" readonly>${esc(text)}</textarea>
+  <button class="btn primary" onclick="copyShare()">Copy text</button>${navigator.share ? `<button class="btn ghost" onclick="nativeShare()">Share to an app</button>` : ''}<button class="btn quiet" onclick="closeSheet()">Done</button>`);
+}
+async function copyShare(){
+  const ta = document.getElementById('sharetext');
+  try { await navigator.clipboard.writeText(ta.value); toast('Copied. Paste it in your group chat.'); }
+  catch(e){ ta.focus(); ta.select(); try { document.execCommand('copy'); toast('Copied. Paste it in your group chat.'); } catch(_){ toast('Select the text and copy it manually'); } }
+}
+async function nativeShare(){ try { await navigator.share({text:document.getElementById('sharetext').value}); } catch(e){} }
+
+/* ---------- player stats ---------- */
+function lifetime(pid){
+  const games = completed().slice().reverse().map(s => { const e = s.entries.find(e => e.playerId === pid); return e ? {s, e, n:net(e)} : null; }).filter(Boolean);
+  const nets = games.map(g => g.n);
+  const invested = sum(games.map(g => inOf(g.e))), returned = sum(games.map(g => g.e.cashOut ?? 0));
+  let streak = 0, bestStreak = 0; nets.forEach(n => { streak = n > 0 ? streak + 1 : 0; bestStreak = Math.max(bestStreak, streak); });
+  return {games, total:sum(nets), played:games.length, wins:nets.filter(n => n > 0).length, losses:nets.filter(n => n < 0).length, draws:nets.filter(n => n === 0).length,
+    best:nets.length ? Math.max(...nets) : 0, worst:nets.length ? Math.min(...nets) : 0, invested, returned,
+    buyIns:sum(games.map(g => g.e.buyIns.length)), rebuys:sum(games.map(g => g.e.buyIns.length - 1)), bestStreak,
+    topFinishes:games.filter(g => Math.max(...g.s.entries.map(net)) === g.n && g.n > 0).length,
+    comeback:games.some(g => g.e.buyIns.length > 1 && g.n > 0), bust:games.some(g => (g.e.cashOut ?? 0) === 0)};
+}
+
+function vPlayers(){
+  const list = S.players.map(p => ({p, st:lifetime(p.id)})).sort((a, b) => b.st.total - a.st.total);
+  let h = `<div class="addrow" style="margin-top:0;margin-bottom:18px"><input id="np" placeholder="New player name" onkeydown="if(event.key==='Enter')addPlayer()"><button onclick="addPlayer()">Add</button></div>`;
+  if (!list.length) return {title:'Players', html:h + `<div class="empty">No players yet. Add your group here, or add them as you start a game.</div>`};
+  h += `<div class="list">` + list.map(({p, st}) => `<button class="row" onclick="go({v:'player',id:'${p.id}'})">${av(p)}<div class="grow"><div class="name">${esc(p.name)}</div><div class="sub">${st.played ? `${st.played} sessions, ${st.wins}W / ${st.losses}L` : 'No games yet'}</div></div><div class="val ${cls(st.total)}">${sfmt(st.total)}</div></button>`).join('') + `</div>`;
+  return {title:'Players', html:h};
+}
+function addPlayer(){
+  const el = document.getElementById('np'); const name = el.value.trim(); if (!name) return;
+  if (S.players.some(x => x.name.toLowerCase() === name.toLowerCase())) { toast(`${name} is already on the list`); return; }
+  S.players.push({id:uid(), name, emoji:randEmoji()}); save(); render(); toast(`Added ${name}`);
+}
+
+function vPlayer(){
+  const p = P(R.id), st = lifetime(p.id);
+  const winPct = st.played ? Math.round(st.wins / st.played * 100) : 0;
+  const roi = st.invested ? Math.round(st.total / st.invested * 100) : 0;
+  const last = st.games.slice(-5);
+  let h = `<div class="profile">${av(p, 'xl')}<div><div class="pname">${esc(p.name)}</div><div class="sub" style="font-size:16px">${st.played} session${st.played === 1 ? '' : 's'} played</div></div></div>`;
+  h += `<section class="hero"><div class="cap">Lifetime P&amp;L</div><div class="mono big ${cls(st.total)}">${sfmt(st.total)}</div><div class="meta"><span><b>${winPct}%</b> win rate</span><span><b>${roi}%</b> ROI</span></div></section>`;
+  if (last.length) h += `<div class="card last5"><span class="cap">Last ${last.length}</span><div class="dots">${last.map(g => { const r = g.n > 0 ? 'W' : g.n < 0 ? 'L' : 'D'; return `<span class="dot ${r}" title="${fdate(g.s.date)}: ${sfmt(g.n)}">${r}</span>`; }).join('')}</div><span class="gold" style="font-weight:700">${last.filter(g => g.n > 0).length}/${last.length}</span></div>`;
+  const tile = (label, value, c = '') => `<div class="tile"><div class="tl">${label}</div><div class="tv ${c}">${value}</div></div>`;
+  h += `<div class="grid">
+    ${tile('Avg / session', st.played ? sfmt(Math.round(st.total / st.played)) : '$0', cls(st.total))}
+    ${tile('Record', `${st.wins}W / ${st.losses}L${st.draws ? ` / ${st.draws}D` : ''}`, 'gold')}
+    ${tile('Total invested', fmt(st.invested))}
+    ${tile('Total returned', fmt(st.returned))}
+    ${tile('Best session', sfmt(st.best), 'win')}
+    ${tile('Worst session', sfmt(st.worst), 'loss')}
+    ${tile('Total buy-ins', st.buyIns, 'gold')}
+    ${tile('Top finishes', `${st.topFinishes} 🥇`, 'gold')}
+  </div>`;
+  if (st.games.length){
+    h += `<div class="cap sect">History</div><div class="list">` + st.games.slice().reverse().map(g => `<button class="row" onclick="go({v:'detail',id:'${g.s.id}'})"><div class="grow"><div class="name">${fdate(g.s.date)}</div><div class="sub">${esc(g.s.location || 'Home game')}</div></div><div class="val ${cls(g.n)}">${sfmt(g.n)}</div></button>`).join('') + `</div>`;
+  }
+  return {title:p.name, noTitle:true, back:{v:'players'}, action:`<button class="hdr-btn" onclick="editPlayer('${p.id}')">✎ Edit</button>`, html:h};
+}
+function editPlayer(pid){
+  const p = P(pid); EDIT = {id:pid, emoji:p.emoji, photo:p.photo || null};
+  sheet(`<div class="grab"></div><h3>Edit player</h3>
+  <div class="photo-row"><span id="editav">${editAv()}</span><div class="acts">
+    <label class="pill solid">Upload photo<input type="file" accept="image/*" onchange="pickPhoto(this)"></label>
+    <button class="pill" id="rmphoto" onclick="EDIT.photo=null;refreshEditAv()" ${EDIT.photo ? '' : 'hidden'}>Remove photo</button>
+  </div></div>
+  <label class="field"><span>Name</span><input id="ename" value="${esc(p.name)}"></label>
+  <div class="field"><span>Or pick an emoji</span></div><div class="emojis">${EMOJIS.map(e => `<button aria-pressed="${!EDIT.photo && e === p.emoji}" onclick="pickEmoji(this,'${e}')">${e}</button>`).join('')}</div>
+  <div class="err" id="photoerr"></div>
+  <button class="btn primary" onclick="saveEdit()">Save changes</button><button class="btn quiet" onclick="closeSheet()">Cancel</button>`);
+}
+function editAv(){ return av({id:EDIT.id, emoji:EDIT.emoji, photo:EDIT.photo}, 'xl'); }
+function refreshEditAv(){
+  document.getElementById('editav').innerHTML = editAv();
+  document.getElementById('rmphoto').hidden = !EDIT.photo;
+  document.querySelectorAll('.emojis button').forEach(b => b.setAttribute('aria-pressed', !EDIT.photo && b.textContent === EDIT.emoji));
+}
+function pickEmoji(btn, e){ EDIT.emoji = e; EDIT.photo = null; refreshEditAv(); }
+function pickPhoto(input){
+  const file = input.files && input.files[0]; if (!file) return;
+  const err = document.getElementById('photoerr'); err.textContent = '';
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      // crop to a centred square and shrink to 192px so it stays small in storage
+      const size = 192, c = document.createElement('canvas'); c.width = c.height = size;
+      const side = Math.min(img.width, img.height);
+      c.getContext('2d').drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+      EDIT.photo = c.toDataURL('image/jpeg', 0.82); refreshEditAv();
+    };
+    img.onerror = () => { err.textContent = "That file couldn't be read as an image. Try a JPG or PNG."; };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+function saveEdit(){
+  const p = P(EDIT.id), name = document.getElementById('ename').value.trim();
+  if (name) p.name = name; p.emoji = EDIT.emoji; p.photo = EDIT.photo || undefined;
+  save(); closeSheet(); render(); toast('Changes saved');
+}
+
+function vStats(){
+  const done = completed();
+  const moved = sum(done.map(s => sum(s.entries.flatMap(e => e.buyIns))));
+  let best = null; done.forEach(s => s.entries.forEach(e => { if (!best || net(e) > best.n) best = {n:net(e), p:P(e.playerId), s}; }));
+  const rows = S.players.map(p => ({p, st:lifetime(p.id)})).filter(r => r.st.played).sort((a, b) => b.st.total - a.st.total);
+  const max = Math.max(...rows.map(r => Math.abs(r.st.total)), 1);
+  let h = `<section class="hero"><div class="cap">Through the pot</div><div class="mono big gold">${fmt(moved)}</div><div class="meta"><span><b>${done.length}</b> games</span><span><b>${rows.length}</b> players</span></div></section>`;
+  if (best) h += `<div class="card" style="display:flex;align-items:center;gap:12px;padding:14px 16px">${av(best.p)}<div class="grow"><div class="sub">Biggest single night</div><div class="name">${esc(best.p.name)}, ${fdate(best.s.date)}</div></div><div class="val win">${sfmt(best.n)}</div></div>`;
+  h += `<div class="cap sect">Leaderboard</div>`;
+  h += rows.length ? `<div class="list">` + rows.map(({p, st}, i) => { const w = Math.abs(st.total) / max * 50; return `<button class="lb" style="display:block;width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left" onclick="go({v:'player',id:'${p.id}'})"><div class="lb-top"><span class="rank">${i + 1}</span>${av(p, 'sm')}<div class="grow name">${esc(p.name)}</div><div class="val ${cls(st.total)}" style="font-size:18px">${sfmt(st.total)}</div></div><div class="track"><span class="bar ${st.total >= 0 ? 'pos' : 'neg'}" style="${st.total >= 0 ? `left:50%;width:${w}%` : `right:50%;width:${w}%`}"></span></div></button>`; }).join('') + `</div>` : `<div class="empty">Finish a game to start the leaderboard.</div>`;
+  h += `<button class="btn quiet" onclick="confirmTest()">Load test data (15 games)</button>`;
+  if (S.players.length || S.sessions.length) h += `<button class="btn quiet danger-text" onclick="confirmClear()">Clear all data</button>`;
+  return {title:'Stats', html:h};
+}
+function confirmClear(){
+  sheet(`<div class="grab"></div><h3>Clear all data?</h3><p class="sub" style="font-size:16px;margin:0 0 6px">This deletes every player, game and photo in this prototype. It can't be undone.</p><div class="menu"><button class="btn danger" onclick="clearAll()">Clear all data</button><button class="btn quiet" onclick="closeSheet()">Cancel</button></div>`);
+}
+function confirmTest(){
+  sheet(`<div class="grab"></div><h3>Load test data?</h3><p class="sub" style="font-size:16px;margin:0 0 6px">This replaces everything with 8 players and 15 sample games from June to September.</p><div class="menu"><button class="btn" onclick="loadTest()">Load test data</button><button class="btn quiet" onclick="closeSheet()">Cancel</button></div>`);
+}
+function loadTest(){ S = testData(); save(); closeSheet(); go({v:'home'}); toast('Loaded 15 test games'); }
+function clearAll(){ S = seed(); save(); closeSheet(); go({v:'home'}); toast('All data cleared'); }
+
+/* ---------- bottom sheet ---------- */
+function sheet(inner){
+  const o = document.getElementById('sheet');
+  o.innerHTML = `<div class="scrim" onclick="closeSheet()"></div><div class="panel" role="dialog" aria-modal="true">${inner}</div>`;
+  o.hidden = false;
+  const i = o.querySelector('input'); if (i) setTimeout(() => i.focus(), 60);
+}
+function closeSheet(){ const o = document.getElementById('sheet'); o.hidden = true; o.innerHTML = ''; }
+function amountSheet(title, label, initial, quick, cb, note){
+  PENDING = cb;
+  sheet(`<div class="grab"></div><h3>${esc(title)}</h3><label class="amt"><span>$</span><input id="amt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0" value="${initial}" onkeydown="if(event.key==='Enter')submitAmt()" aria-label="Amount in dollars"></label>
+  ${quick ? `<div class="quick">${quick.map(v => `<button class="pill" onclick="document.getElementById('amt').value=${v}">$${v}</button>`).join('')}</div>` : ''}
+  ${note ? `<div class="hint" style="text-align:left;margin:10px 2px 0">${esc(note)}</div>` : ''}<div class="err" id="amterr"></div><button class="btn primary" onclick="submitAmt()">${esc(label)}</button><button class="btn quiet" onclick="closeSheet()">Cancel</button>`);
+}
+function submitAmt(){
+  const v = parseFloat(document.getElementById('amt').value);
+  if (isNaN(v) || v < 0) { document.getElementById('amterr').textContent = 'Enter an amount of $0 or more.'; return; }
+  const cb = PENDING; closeSheet(); cb(Math.round(v * 100));
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+
+load(); render();
+</script>
+</body>
+</html>
