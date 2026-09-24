@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
-import { href, type Route } from '../router.ts'
+import { goBack, href, type Route } from '../router.ts'
 
 // The frame around every screen: top bar with an optional Back link and
 // button, then the page title and content.
@@ -17,7 +17,9 @@ export function Page({ title, back, action, hideTitle, children }: {
   return (
     <>
       <header className="top">
-        {back ? <a className="back" href={href(back)}>← Back</a> : <span />}
+        {back
+          ? <a className="back" href={href(back)} onClick={e => { e.preventDefault(); goBack(back) }}>← Back</a>
+          : <span />}
         {action}
       </header>
       <main>

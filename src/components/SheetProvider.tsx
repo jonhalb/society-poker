@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { sheetClosed, sheetOpened } from '../router.ts'
 import { SheetContext, type SheetApi } from './feedback.ts'
 
 // Bottom sheet: slides up over the page for quick entry and menus.
-// Tap the dark area or press Escape to close.
+// Tap the dark area, press Escape, or use the phone's back button to close.
 export function SheetProvider({ children }: { children: ReactNode }) {
   const [content, setContent] = useState<ReactNode>(null)
   const panel = useRef<HTMLDivElement>(null)
 
-  const open = useCallback((node: ReactNode) => setContent(node), [])
-  const close = useCallback(() => setContent(null), [])
+  const open = useCallback((node: ReactNode) => {
+    setContent(node)
+    sheetOpened(() => setContent(null))
+  }, [])
+  const close = useCallback(() => {
+    setContent(null)
+    sheetClosed()
+  }, [])
   const api = useMemo<SheetApi>(() => ({ open, close }), [open, close])
 
   const isOpen = content !== null
