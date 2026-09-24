@@ -99,6 +99,17 @@ describe('playerStats', () => {
     expect(mike.topFinishes).toBe(2)
   })
 
+  it('counts a draw as played but not won in the win rate', () => {
+    // Dan: one break-even night, one win → 1 ÷ 2 = 50%
+    expect(playerStats('dan', games).winRate).toBe(50)
+  })
+
+  it('gives nobody a top finish on a night everyone broke even', () => {
+    const flat = [makeGame({ id: 'flat', date: '2026-08-01', rows: [['mike', [20], 20], ['jess', [20], 20]] })]
+    expect(playerStats('mike', flat).topFinishes).toBe(0)
+    expect(playerStats('jess', flat).topFinishes).toBe(0)
+  })
+
   it('only keeps the last five games', () => {
     const many = Array.from({ length: 7 }, (_, i) =>
       makeGame({ id: `g${i}`, date: `2026-08-0${i + 1}`, rows: [['mike', [20], i < 2 ? 0 : 40]] }))

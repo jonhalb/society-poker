@@ -72,7 +72,7 @@ A private web app for tracking a friend group's home poker games: buy-ins, rebuy
 - `invites`: id, group_id, token (long random), created_by, expires_at, revoked
 - `players`: id, group_id, name, emoji, photo_path, user_id (nullable, set when claimed), archived (boolean, never hard-delete players), created_at
 - `games`: id, group_id, date, location, stakes, default_buy_in_cents, status (`active` | `completed`), started_at, duration_minutes, notes, created_by, created_at, updated_at
-- `game_entries`: id, game_id, player_id, cash_out_cents (nullable)
+- `game_entries`: id, game_id, player_id, cash_out_cents (nullable), created_at (keeps players in join order)
 - `buy_ins`: id, entry_id, amount_cents, created_at
 - `payments`: id, game_id, from_player_id, to_player_id, amount_cents, paid, paid_at
 - `game_edits`: id, game_id, user_id, action, details (json), created_at (edit history)

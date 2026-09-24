@@ -50,6 +50,7 @@ export function makeGame(opts: {
         game_id: opts.id,
         player_id: pid,
         cash_out_cents: out === null ? null : Math.round(out * 100),
+        created_at: created,
         buy_ins: buys.map((dollars, i) => ({
           id: `${entryId}-b${i}`,
           entry_id: entryId,

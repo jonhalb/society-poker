@@ -44,6 +44,7 @@ export interface GameEntry {
   game_id: Id
   player_id: Id
   cash_out_cents: number | null // null while still playing
+  created_at: string // keeps players in the order they joined
 }
 
 // Every buy-in and rebuy is its own record

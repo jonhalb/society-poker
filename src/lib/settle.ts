@@ -62,6 +62,22 @@ export function carryOverPaid(
   })
 }
 
+// Payments already marked paid that no longer appear after a recalculation
+// (because an edit changed who pays whom, or how much). The app shows these
+// in a notice instead of dropping them silently.
+export function unmatchedPaid(fresh: Transfer[], existing: Payment[]): Payment[] {
+  const remaining = [...fresh]
+  return existing.filter(p => {
+    if (!p.paid) return false
+    const i = remaining.findIndex(t => t.from_player_id === p.from_player_id
+      && t.to_player_id === p.to_player_id
+      && t.amount_cents === p.amount_cents)
+    if (i === -1) return true
+    remaining.splice(i, 1)
+    return false
+  })
+}
+
 // Biggest payments first, so the list doesn't reshuffle between loads
 export function sortPayments<T extends Transfer>(payments: T[]): T[] {
   return [...payments].sort((a, b) => b.amount_cents - a.amount_cents

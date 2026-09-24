@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { carryOverPaid, settleGame, settleUp, sortPayments, type PlayerNet } from './settle.ts'
+import { carryOverPaid, settleGame, settleUp, sortPayments, unmatchedPaid, type PlayerNet } from './settle.ts'
 import { makeGame } from './test-helpers.ts'
 import type { Payment } from './types.ts'
 
@@ -47,6 +47,15 @@ describe('settleUp', () => {
     expect(result.map(short)).toEqual(['b→a 1000'])
   })
 
+  it('handles uneven cents exactly, without rounding', () => {
+    const input = nets([['a', 3333], ['b', 1667], ['c', -2501], ['d', -2499]])
+    expect(settleUp(input).map(short)).toEqual(['c→a 2501', 'd→a 832', 'd→b 1667'])
+  })
+
+  it('handles a single cent', () => {
+    expect(settleUp(nets([['a', 1], ['b', -1]])).map(short)).toEqual(['b→a 1'])
+  })
+
   it('works on a whole game', () => {
     const g = makeGame({ id: 'g', date: '2026-06-05', rows: [['a', [20, 20], 0], ['b', [20], 60.5], ['c', [20], 19.5]] })
     expect(settleGame(g).map(short)).toEqual(['a→b 4000', 'c→b 50'])
@@ -73,6 +82,33 @@ describe('carryOverPaid', () => {
       { from_player_id: 'a', to_player_id: 'b', amount_cents: 500 },
     ]
     expect(carryOverPaid(fresh, [payment('a', 'b', 500, true)]).map(p => p.paid)).toEqual([true, false])
+  })
+})
+
+describe('unmatchedPaid', () => {
+  const payment = (from: string, to: string, amount: number, paid: boolean): Payment => ({
+    id: `${from}${to}${amount}`, game_id: 'g', from_player_id: from, to_player_id: to,
+    amount_cents: amount, paid, paid_at: paid ? '2026-06-06T10:00:00.000Z' : null,
+  })
+
+  it('flags a paid payment whose amount changed', () => {
+    const fresh = [{ from_player_id: 'b', to_player_id: 'a', amount_cents: 1500 }]
+    expect(unmatchedPaid(fresh, [payment('b', 'a', 2000, true)]).map(p => p.id)).toEqual(['ba2000'])
+  })
+
+  it('flags a paid payment that is no longer needed at all', () => {
+    expect(unmatchedPaid([], [payment('b', 'a', 2000, true)])).toHaveLength(1)
+  })
+
+  it('ignores unpaid payments and ones that are unchanged', () => {
+    const fresh = [{ from_player_id: 'b', to_player_id: 'a', amount_cents: 2000 }]
+    expect(unmatchedPaid(fresh, [payment('b', 'a', 2000, true), payment('c', 'a', 500, false)])).toEqual([])
+  })
+
+  it('matches each new payment to only one old one', () => {
+    const fresh = [{ from_player_id: 'b', to_player_id: 'a', amount_cents: 500 }]
+    const old = [payment('b', 'a', 500, true), { ...payment('b', 'a', 500, true), id: 'dup' }]
+    expect(unmatchedPaid(fresh, old).map(p => p.id)).toEqual(['dup'])
   })
 })
 

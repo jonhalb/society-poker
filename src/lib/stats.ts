@@ -31,22 +31,41 @@ export interface PlayerGame {
   result: Result
 }
 
+// How each stat is defined. Only completed games count; a live game never
+// changes anyone's stats until it's finished.
+//
+// - Net for a night: cash-out minus everything bought in (buy-in + rebuys).
+// - Win / loss / draw: net above $0 is a win (W), below $0 a loss (L), and
+//   exactly $0 a draw (D), shown as "break-even".
+// - Win rate: wins ÷ games played, rounded to a whole percent. Draws count as
+//   games played but not as wins, so breaking even lowers your win rate.
+//   Example: 2 wins, 1 loss, 1 draw → 2 ÷ 4 = 50%.
+// - ROI (return on investment): lifetime net ÷ total bought in (including
+//   rebuys) across all games, rounded to a whole percent. $70 bought in and
+//   $95 cashed out is +$25 ÷ $70 = 36%. It's 0% before your first game.
+// - Average per session: lifetime net ÷ games played, rounded to the cent.
+// - Best / worst session: the highest and lowest single-night net.
+// - Top finish: a night where your net was the highest at the table AND above
+//   $0. If two people tie for the biggest win, both get the top finish. A
+//   night where nobody won (everyone broke even) has no top finish.
+// - Biggest single night (Stats tab): the highest single-night net by anyone.
+//   On a tie, the most recent night is shown.
 export interface PlayerStats {
   history: PlayerGame[] // oldest first
-  total: number
+  total: number // lifetime net
   played: number
   wins: number
   losses: number
   draws: number
-  winRate: number // whole percent
-  roi: number // whole percent: total ÷ invested
+  winRate: number // whole percent, see above
+  roi: number // whole percent, see above
   average: number // cents per session
   best: number
   worst: number
-  invested: number
-  returned: number
-  buyIns: number
-  topFinishes: number // nights with the (joint) biggest win
+  invested: number // everything bought in, rebuys included
+  returned: number // everything cashed out
+  buyIns: number // count of buy-ins, rebuys included
+  topFinishes: number // see above
   lastFive: PlayerGame[] // oldest first
 }
 
