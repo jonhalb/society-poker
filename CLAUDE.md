@@ -102,6 +102,46 @@ Constraints: amounts ≥ 0; unique player per game; only one `active` game per g
 - Check current official docs (Supabase, Vite, vite-plugin-pwa) when unsure. Don't rely on memory for their APIs
 - Explain anything non-obvious in plain language; I'm new to coding
 - Update the Status section below when a phase is finished
+- Phase 1 is split into steps (see Status). Finish, test, commit and push each step before the next, and tell me what changed and how to test it on my phone
+- **Commits are credited to me only:** no `Co-Authored-By: Claude` lines and no "Generated with Claude Code" footers in commits or PRs
+- Commits use my private GitHub address (`257576711+jonhalb@users.noreply.github.com`, set in this repo's local git config). Never commit with my real email
+- Stage files by path, not `git add -A`, so local files (e.g. `.claude/settings.local.json`) never get committed
+- Don't ask me about unfinished list items in my messages; if something looks cut off, carry on
+
+## How the Code Fits Together (Phase 1)
+
+- `src/lib/`: pure logic with tests. `types.ts` holds row types named and shaped like the Supabase tables (snake_case, cents, one row per buy-in). Stats definitions are written out in `stats.ts`
+- `src/data/store.ts`: **the only module that reads or saves data.** Screens read with `useAppData()` and change things only through `store.*` functions, which are async and throw `DataError` when refused. It enforces the future database rules (one live game, amounts ≥ 0 cents, unique names). Phase 4 swaps its insides for Supabase without changing screens
+- Undo: `useAction().onGame()` snapshots a game before a change; Undo restores that whole snapshot
+- `src/data/sampleData.ts`: the 15 sample games, loaded only by the development-only button on the Stats tab. The production build must never contain it (check with a search of `dist/` for "Tom's garage")
+- `src/router.ts`: hash routes plus history rules. Tab taps replace history, an open sheet adds a step (back closes it), "← Back" steps back when that's its target, and a sheet button that opens a page reuses the sheet's step. Use `navigate(route, { replace: true })` after finishing a form so back skips it
+- `src/styles/app.css`: all prototype styles, using the tokens in `tokens.css`
+- Phone testing: `npm run dev:phone`, then open the "Network" address it prints (e.g. `http://192.168.50.53:5173/society-poker/`)
+- Screenshots: Playwright at iPhone size, installed in a temporary folder outside the repo. Use Chromium for screenshots: Playwright's Windows WebKit renders the Outfit font too thin (the prototype looks the same there, so it's not an app bug)
+- Over plain-HTTP local testing, these don't work until HTTPS (Phase 6): keep-screen-awake, the phone's share menu, the modern copy-to-clipboard method (keep a fallback), installing as an app. IDs use `crypto.getRandomValues`, not `crypto.randomUUID`, for the same reason
+
+## Notes for Upcoming Work
+
+**Step 4 (live game)**
+- Use `lastPlayerPrefill` for the last player's cash-out, and `useAction().onGame` for every change so each has Undo
+- A reopened game still has its original `started_at`, so a plain timer would show days. Show the saved duration instead, or no timer, for reopened games
+- Keep-screen-awake (Wake Lock) only works over HTTPS. Fail quietly on the local network
+
+**Step 5 (settle up and game detail)**
+- Call `store.syncPayments(gameId)` when the settle screen opens. If it returns `clearedPaid`, **show a notice listing those payments** (e.g. "Dan's $15 payment to Mike was marked paid, but it's now $10 and unpaid"). Never clear them silently
+- **Typing in Notes must dismiss any open Undo toast.** Undo restores the whole game, so it would otherwise wipe notes typed within those few seconds
+- `completeGame` keeps the first saved duration when a reopened game is completed again
+- Share: the phone's share menu is HTTPS-only. Show that button only when `navigator.share` exists, and keep the older copy method as a fallback for Copy text
+
+**Step 6 (players and stats)**
+- Until Phase 5, store a resized photo as a `data:image/jpeg` address in `photo_path`. `Avatar` only shows `photo_path` values starting with `data:image/`. Phase 5 changes this to Storage paths
+- Players are archived, never deleted. Pickers already hide archived players
+- The Stats tab keeps the development-only tools under `import.meta.env.DEV`
+
+**Phase 2 (database)**
+- `game_entries` has `created_at` to keep players in join order
+- `games.location` and `games.notes` are `not null default ''` (the app uses empty text, never null)
+- Payments have no order column. The app lists them biggest first (`sortPayments`)
 
 ## Phases
 
@@ -135,6 +175,12 @@ Constraints: amounts ≥ 0; unique player per game; only one `active` game per g
 
 - [x] Phase 0: Setup
 - [ ] Phase 1: Local rebuild
+  - [x] Step 1: Core logic in `src/lib/` with tests
+  - [x] Step 2: App shell and data module (tabs, routes, sheets, toasts with Undo, dev-only sample data)
+  - [x] Step 3: Games tab (start, run it back, log a finished game, still owed, past games)
+  - [ ] Step 4: Live game
+  - [ ] Step 5: Settle up and game detail
+  - [ ] Step 6: Players and Stats
 - [ ] Phase 2: Database
 - [ ] Phase 3: Accounts and group
 - [ ] Phase 4: Connect to Supabase
