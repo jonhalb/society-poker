@@ -171,8 +171,8 @@ Constraints: amounts ≥ 0; unique player per game; only one `active` game per g
   - [x] Step 2: App shell and data module (tabs, routes, sheets, toasts with Undo, dev-only sample data)
   - [x] Step 3: Games tab (start, run it back, log a finished game, still owed, past games)
   - [x] Step 4: Live game
-  - [x] Step 5: Settle up and game detail
-  - [ ] Step 6: Players and Stats
+  - [x] Step 5: Settle up and game detail (built and pushed; not yet tested on the phone)
+  - [ ] Step 6: Players and Stats  ← next
 - [ ] Phase 2: Database
 - [ ] Phase 3: Accounts and group
 - [ ] Phase 4: Connect to Supabase
