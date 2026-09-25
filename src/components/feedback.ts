@@ -7,6 +7,8 @@ export type UndoFn = () => void | Promise<void>
 export interface ToastApi {
   // Shows a short message. With `undo`, it stays longer and has an Undo button.
   show(message: string, undo?: UndoFn): void
+  // Hides the toast if it's offering Undo (Undo would wipe out what's being typed)
+  dismissUndo(): void
 }
 
 export interface SheetApi {

@@ -115,6 +115,7 @@ Constraints: amounts ≥ 0; unique player per game; only one `active` game per g
 - Undo: `useAction().onGame()` snapshots a game before a change; Undo restores that whole snapshot
 - Game timer: use `gameClock` (in `src/lib/game.ts`), never `started_at` directly. A reopened game shows its saved duration instead of counting from its original start
 - Leaving a page that was just deleted (cancel or delete game): close the sheet, then `goBack({ name: 'games' })`, so the phone's back button doesn't return to the deleted game
+- Settle up and game detail share `ResultsList` and `PaymentsList` (`src/components/GameResults.tsx`). The settle screen calls `store.syncPayments` when it opens and lists any cleared paid ticks in a notice. Game notes save half a second after typing stops (and on leaving the box), and typing hides any open Undo toast (`toast.dismissUndo()`)
 - `src/data/sampleData.ts`: the 15 sample games, loaded only by the development-only button on the Stats tab. The production build must never contain it (check with a search of `dist/` for "Tom's garage")
 - `src/router.ts`: hash routes plus history rules. Tab taps replace history, an open sheet adds a step (back closes it), "← Back" steps back when that's its target, and a sheet button that opens a page reuses the sheet's step. Use `navigate(route, { replace: true })` after finishing a form so back skips it
 - `src/styles/app.css`: all prototype styles, using the tokens in `tokens.css`
@@ -123,12 +124,6 @@ Constraints: amounts ≥ 0; unique player per game; only one `active` game per g
 - Over plain-HTTP local testing, these don't work until HTTPS (Phase 6): keep-screen-awake, the phone's share menu, the modern copy-to-clipboard method (keep a fallback), installing as an app. IDs use `crypto.getRandomValues`, not `crypto.randomUUID`, for the same reason
 
 ## Notes for Upcoming Work
-
-**Step 5 (settle up and game detail)**
-- Call `store.syncPayments(gameId)` when the settle screen opens. If it returns `clearedPaid`, **show a notice listing those payments** (e.g. "Dan's $15 payment to Mike was marked paid, but it's now $10 and unpaid"). Never clear them silently
-- **Typing in Notes must dismiss any open Undo toast.** Undo restores the whole game, so it would otherwise wipe notes typed within those few seconds
-- `completeGame` keeps the first saved duration when a reopened game is completed again
-- Share: the phone's share menu is HTTPS-only. Show that button only when `navigator.share` exists, and keep the older copy method as a fallback for Copy text
 
 **Step 6 (players and stats)**
 - Until Phase 5, store a resized photo as a `data:image/jpeg` address in `photo_path`. `Avatar` only shows `photo_path` values starting with `data:image/`. Phase 5 changes this to Storage paths
@@ -176,7 +171,7 @@ Constraints: amounts ≥ 0; unique player per game; only one `active` game per g
   - [x] Step 2: App shell and data module (tabs, routes, sheets, toasts with Undo, dev-only sample data)
   - [x] Step 3: Games tab (start, run it back, log a finished game, still owed, past games)
   - [x] Step 4: Live game
-  - [ ] Step 5: Settle up and game detail
+  - [x] Step 5: Settle up and game detail
   - [ ] Step 6: Players and Stats
 - [ ] Phase 2: Database
 - [ ] Phase 3: Accounts and group

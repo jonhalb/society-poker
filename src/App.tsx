@@ -1,14 +1,17 @@
 import { useEffect } from 'react'
+import { Page } from './components/Page.tsx'
 import { SheetProvider } from './components/SheetProvider.tsx'
 import { TabBar } from './components/TabBar.tsx'
 import { ToastProvider } from './components/ToastProvider.tsx'
 import { useAppData } from './data/store.ts'
 import { href, tabFor, useRoute, type Route } from './router.ts'
 import { GamesScreen } from './screens/GamesScreen.tsx'
+import { GameDetailScreen } from './screens/GameDetailScreen.tsx'
 import { LiveGameScreen } from './screens/LiveGameScreen.tsx'
 import { LogGameScreen } from './screens/LogGameScreen.tsx'
 import { NewGameScreen } from './screens/NewGameScreen.tsx'
-import { ComingSoon, GamePlaceholder, PlayersPlaceholder, StatsPlaceholder } from './screens/Placeholders.tsx'
+import { ComingSoon, PlayersPlaceholder, StatsPlaceholder } from './screens/Placeholders.tsx'
+import { SettleScreen } from './screens/SettleScreen.tsx'
 
 function Screen({ route }: { route: Route }) {
   switch (route.name) {
@@ -16,7 +19,7 @@ function Screen({ route }: { route: Route }) {
     case 'new': return <NewGameScreen from={route.from} />
     case 'log': return <LogGameScreen />
     case 'game': return <GameRoute id={route.id} />
-    case 'settle': return <ComingSoon title="Settle up" step={5} back={{ name: 'game', id: route.id }} />
+    case 'settle': return <SettleScreen id={route.id} />
     case 'players': return <PlayersPlaceholder />
     case 'player': return <ComingSoon title="Player" step={6} back={{ name: 'players' }} />
     case 'stats': return <StatsPlaceholder />
@@ -27,7 +30,14 @@ function Screen({ route }: { route: Route }) {
 function GameRoute({ id }: { id: string }) {
   const { games } = useAppData()
   const game = games.find(g => g.id === id)
-  return game?.status === 'active' ? <LiveGameScreen game={game} /> : <GamePlaceholder id={id} />
+  if (!game) {
+    return (
+      <Page title="Game not found" back={{ name: 'games' }}>
+        <div className="empty">This game no longer exists.</div>
+      </Page>
+    )
+  }
+  return game.status === 'active' ? <LiveGameScreen game={game} /> : <GameDetailScreen game={game} />
 }
 
 export default function App() {

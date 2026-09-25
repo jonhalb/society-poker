@@ -9,12 +9,24 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<{ message: string, undo?: UndoFn } | null>(null)
   const [visible, setVisible] = useState(false)
   const timer = useRef<number | undefined>(undefined)
+  const undoShowing = useRef(false)
 
   const show = useCallback((message: string, undo?: UndoFn) => {
     window.clearTimeout(timer.current)
     setToast({ message, undo })
     setVisible(true)
-    timer.current = window.setTimeout(() => setVisible(false), undo ? UNDO_MS : PLAIN_MS)
+    undoShowing.current = !!undo
+    timer.current = window.setTimeout(() => {
+      setVisible(false)
+      undoShowing.current = false
+    }, undo ? UNDO_MS : PLAIN_MS)
+  }, [])
+
+  const dismissUndo = useCallback(() => {
+    if (!undoShowing.current) return
+    undoShowing.current = false
+    window.clearTimeout(timer.current)
+    setVisible(false)
   }, [])
 
   async function runUndo() {
@@ -29,7 +41,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const api = useMemo<ToastApi>(() => ({ show }), [show])
+  const api = useMemo<ToastApi>(() => ({ show, dismissUndo }), [show, dismissUndo])
   const canUndo = visible && !!toast?.undo
 
   return (

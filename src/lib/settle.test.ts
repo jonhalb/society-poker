@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { carryOverPaid, settleGame, settleUp, sortPayments, unmatchedPaid, type PlayerNet } from './settle.ts'
+import { carryOverPaid, clearedPaidMessage, settleGame, settleUp, sortPayments, unmatchedPaid, type PlayerNet } from './settle.ts'
 import { makeGame } from './test-helpers.ts'
 import type { Payment } from './types.ts'
 
@@ -120,5 +120,24 @@ describe('sortPayments', () => {
       { from_player_id: 'a', to_player_id: 'y', amount_cents: 900 },
     ]
     expect(sortPayments(list).map(short)).toEqual(['a→y 900', 'b→x 900', 'a→x 100'])
+  })
+})
+
+describe('clearedPaidMessage', () => {
+  const nameOf = (id: string) => id[0].toUpperCase() + id.slice(1)
+  const paid: Payment = {
+    id: 'p1', game_id: 'g', from_player_id: 'dan', to_player_id: 'mike', amount_cents: 1500, paid: true, paid_at: null,
+  }
+
+  it('says the new amount when the same two players still settle up', () => {
+    const now = [{ from_player_id: 'dan', to_player_id: 'mike', amount_cents: 1000 }]
+    expect(clearedPaidMessage(paid, now, nameOf))
+      .toBe("Dan's $15 payment to Mike was marked paid, but it's now $10 and unpaid.")
+  })
+
+  it('says when the payment is no longer needed', () => {
+    const now = [{ from_player_id: 'dan', to_player_id: 'jess', amount_cents: 1500 }]
+    expect(clearedPaidMessage(paid, now, nameOf))
+      .toBe("Dan's $15 payment to Mike was marked paid, but Dan no longer pays Mike.")
   })
 })

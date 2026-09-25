@@ -1,5 +1,6 @@
 // Settle-up: who pays whom at the end of a night.
 import { net } from './game.ts'
+import { formatMoney } from './money.ts'
 import type { GameWithEntries, Id, Payment } from './types.ts'
 
 export interface Transfer {
@@ -83,4 +84,17 @@ export function sortPayments<T extends Transfer>(payments: T[]): T[] {
   return [...payments].sort((a, b) => b.amount_cents - a.amount_cents
     || a.from_player_id.localeCompare(b.from_player_id)
     || a.to_player_id.localeCompare(b.to_player_id))
+}
+
+// One sentence about a paid payment that no longer fits after an edit, e.g.
+// "Dan's $15 payment to Mike was marked paid, but it's now $10 and unpaid."
+// `current` is the list of payments after recalculating.
+export function clearedPaidMessage(cleared: Payment, current: Transfer[], nameOf: (id: Id) => string): string {
+  const from = nameOf(cleared.from_player_id)
+  const to = nameOf(cleared.to_player_id)
+  const start = `${from}'s ${formatMoney(cleared.amount_cents)} payment to ${to} was marked paid, but`
+  const now = current.find(t => t.from_player_id === cleared.from_player_id && t.to_player_id === cleared.to_player_id)
+  return now
+    ? `${start} it's now ${formatMoney(now.amount_cents)} and unpaid.`
+    : `${start} ${from} no longer pays ${to}.`
 }

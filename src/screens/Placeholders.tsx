@@ -2,21 +2,7 @@
 // real screen from prototype.html.
 import { DevTools } from '../components/DevTools.tsx'
 import { Page } from '../components/Page.tsx'
-import { useAppData } from '../data/store.ts'
 import type { Route } from '../router.ts'
-
-// A finished game's detail page (step 5), or a game that no longer exists
-export function GamePlaceholder({ id }: { id: string }) {
-  const { games } = useAppData()
-  const game = games.find(g => g.id === id)
-  const title = game ? 'Game detail' : 'Game not found'
-  const text = game ? 'The game detail screen arrives in step 5.' : 'This game no longer exists.'
-  return (
-    <Page title={title} back={{ name: 'games' }}>
-      <div className="empty">{text}</div>
-    </Page>
-  )
-}
 
 export function PlayersPlaceholder() {
   return (
