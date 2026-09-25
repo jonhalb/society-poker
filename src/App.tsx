@@ -2,8 +2,10 @@ import { useEffect } from 'react'
 import { SheetProvider } from './components/SheetProvider.tsx'
 import { TabBar } from './components/TabBar.tsx'
 import { ToastProvider } from './components/ToastProvider.tsx'
+import { useAppData } from './data/store.ts'
 import { href, tabFor, useRoute, type Route } from './router.ts'
 import { GamesScreen } from './screens/GamesScreen.tsx'
+import { LiveGameScreen } from './screens/LiveGameScreen.tsx'
 import { LogGameScreen } from './screens/LogGameScreen.tsx'
 import { NewGameScreen } from './screens/NewGameScreen.tsx'
 import { ComingSoon, GamePlaceholder, PlayersPlaceholder, StatsPlaceholder } from './screens/Placeholders.tsx'
@@ -13,12 +15,19 @@ function Screen({ route }: { route: Route }) {
     case 'games': return <GamesScreen />
     case 'new': return <NewGameScreen from={route.from} />
     case 'log': return <LogGameScreen />
-    case 'game': return <GamePlaceholder id={route.id} />
+    case 'game': return <GameRoute id={route.id} />
     case 'settle': return <ComingSoon title="Settle up" step={5} back={{ name: 'game', id: route.id }} />
     case 'players': return <PlayersPlaceholder />
     case 'player': return <ComingSoon title="Player" step={6} back={{ name: 'players' }} />
     case 'stats': return <StatsPlaceholder />
   }
+}
+
+// A game's page: the live screen while it's in progress, otherwise its detail
+function GameRoute({ id }: { id: string }) {
+  const { games } = useAppData()
+  const game = games.find(g => g.id === id)
+  return game?.status === 'active' ? <LiveGameScreen game={game} /> : <GamePlaceholder id={id} />
 }
 
 export default function App() {

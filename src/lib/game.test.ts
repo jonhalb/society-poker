@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  balance, buyInCount, cashedOutCents, lastBuyIn, lastPlayerPrefill, net, potCents,
+  balance, buyInCount, cashedOutCents, gameClock, lastBuyIn, lastPlayerPrefill, net, potCents,
   sortByNet, stillInPlayCents, topWinner, totalIn,
 } from './game.ts'
 import { makeGame } from './test-helpers.ts'
@@ -81,5 +81,22 @@ describe('winners and order', () => {
 describe('lastBuyIn', () => {
   it('finds the most recent buy-in', () => {
     expect(lastBuyIn(live.game_entries[2])?.amount_cents).toBe(1000)
+  })
+})
+
+describe('gameClock', () => {
+  const started = Date.parse('2026-06-05T20:00:00.000Z')
+
+  it('counts up from the start of a live game', () => {
+    expect(gameClock(live, started + 95 * 60000)).toEqual({ minutes: 95, running: true })
+  })
+
+  it('shows the saved duration for a reopened game, not days since it started', () => {
+    const reopened = { ...live, duration_minutes: 162 }
+    expect(gameClock(reopened, started + 3 * 24 * 60 * 60000)).toEqual({ minutes: 162, running: false })
+  })
+
+  it('has no timer for a game logged after the fact', () => {
+    expect(gameClock({ ...live, started_at: null }, started)).toBeNull()
   })
 })

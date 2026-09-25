@@ -1,6 +1,7 @@
 // Maths for a single game: pot, nets, what's still in play.
+import { minutesSince } from './dates.ts'
 import { sum } from './money.ts'
-import type { BuyIn, EntryWithBuyIns, GameWithEntries } from './types.ts'
+import type { BuyIn, EntryWithBuyIns, Game, GameWithEntries } from './types.ts'
 
 export function totalIn(entry: EntryWithBuyIns): number {
   return sum(entry.buy_ins.map(b => b.amount_cents))
@@ -71,4 +72,13 @@ export function lastBuyIn(entry: EntryWithBuyIns): BuyIn | null {
   let last: BuyIn | null = null
   for (const b of entry.buy_ins) if (!last || b.created_at >= last.created_at) last = b
   return last
+}
+
+// What the game timer shows. A live game counts up from started_at. A game
+// that was completed and then reopened keeps its saved duration instead,
+// because its started_at could be days ago. Logged games have no timer.
+export function gameClock(game: Game, now: number): { minutes: number, running: boolean } | null {
+  if (game.duration_minutes !== null) return { minutes: game.duration_minutes, running: false }
+  if (!game.started_at) return null
+  return { minutes: minutesSince(game.started_at, now), running: true }
 }

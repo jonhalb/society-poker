@@ -113,6 +113,8 @@ Constraints: amounts ≥ 0; unique player per game; only one `active` game per g
 - `src/lib/`: pure logic with tests. `types.ts` holds row types named and shaped like the Supabase tables (snake_case, cents, one row per buy-in). Stats definitions are written out in `stats.ts`
 - `src/data/store.ts`: **the only module that reads or saves data.** Screens read with `useAppData()` and change things only through `store.*` functions, which are async and throw `DataError` when refused. It enforces the future database rules (one live game, amounts ≥ 0 cents, unique names). Phase 4 swaps its insides for Supabase without changing screens
 - Undo: `useAction().onGame()` snapshots a game before a change; Undo restores that whole snapshot
+- Game timer: use `gameClock` (in `src/lib/game.ts`), never `started_at` directly. A reopened game shows its saved duration instead of counting from its original start
+- Leaving a page that was just deleted (cancel or delete game): close the sheet, then `goBack({ name: 'games' })`, so the phone's back button doesn't return to the deleted game
 - `src/data/sampleData.ts`: the 15 sample games, loaded only by the development-only button on the Stats tab. The production build must never contain it (check with a search of `dist/` for "Tom's garage")
 - `src/router.ts`: hash routes plus history rules. Tab taps replace history, an open sheet adds a step (back closes it), "← Back" steps back when that's its target, and a sheet button that opens a page reuses the sheet's step. Use `navigate(route, { replace: true })` after finishing a form so back skips it
 - `src/styles/app.css`: all prototype styles, using the tokens in `tokens.css`
@@ -121,11 +123,6 @@ Constraints: amounts ≥ 0; unique player per game; only one `active` game per g
 - Over plain-HTTP local testing, these don't work until HTTPS (Phase 6): keep-screen-awake, the phone's share menu, the modern copy-to-clipboard method (keep a fallback), installing as an app. IDs use `crypto.getRandomValues`, not `crypto.randomUUID`, for the same reason
 
 ## Notes for Upcoming Work
-
-**Step 4 (live game)**
-- Use `lastPlayerPrefill` for the last player's cash-out, and `useAction().onGame` for every change so each has Undo
-- A reopened game still has its original `started_at`, so a plain timer would show days. Show the saved duration instead, or no timer, for reopened games
-- Keep-screen-awake (Wake Lock) only works over HTTPS. Fail quietly on the local network
 
 **Step 5 (settle up and game detail)**
 - Call `store.syncPayments(gameId)` when the settle screen opens. If it returns `clearedPaid`, **show a notice listing those payments** (e.g. "Dan's $15 payment to Mike was marked paid, but it's now $10 and unpaid"). Never clear them silently
@@ -178,7 +175,7 @@ Constraints: amounts ≥ 0; unique player per game; only one `active` game per g
   - [x] Step 1: Core logic in `src/lib/` with tests
   - [x] Step 2: App shell and data module (tabs, routes, sheets, toasts with Undo, dev-only sample data)
   - [x] Step 3: Games tab (start, run it back, log a finished game, still owed, past games)
-  - [ ] Step 4: Live game
+  - [x] Step 4: Live game
   - [ ] Step 5: Settle up and game detail
   - [ ] Step 6: Players and Stats
 - [ ] Phase 2: Database

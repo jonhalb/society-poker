@@ -5,14 +5,12 @@ import { Page } from '../components/Page.tsx'
 import { useAppData } from '../data/store.ts'
 import type { Route } from '../router.ts'
 
-// A live game (step 4) or a finished game's detail page (step 5)
+// A finished game's detail page (step 5), or a game that no longer exists
 export function GamePlaceholder({ id }: { id: string }) {
   const { games } = useAppData()
   const game = games.find(g => g.id === id)
-  const title = !game ? 'Game not found' : game.status === 'active' ? (game.location || 'Live game') : 'Game detail'
-  const text = !game ? 'This game no longer exists.'
-    : game.status === 'active' ? 'The live game screen arrives in step 4.'
-    : 'The game detail screen arrives in step 5.'
+  const title = game ? 'Game detail' : 'Game not found'
+  const text = game ? 'The game detail screen arrives in step 5.' : 'This game no longer exists.'
   return (
     <Page title={title} back={{ name: 'games' }}>
       <div className="empty">{text}</div>

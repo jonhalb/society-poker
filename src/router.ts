@@ -106,8 +106,16 @@ export function switchTab(route: Route) {
 // "← Back": step back if the previous page is where we're going,
 // otherwise swap to it
 export function goBack(to: Route) {
-  if (currentState().from === href(to)) window.history.back()
-  else navigate(to, { replace: true })
+  if (currentState().from !== href(to)) return navigate(to, { replace: true })
+  let steps = 1
+  if (pendingBack !== undefined) {
+    // A sheet just closed and its history step is still there: step back past it too
+    window.clearTimeout(pendingBack)
+    pendingBack = undefined
+    sheetStep = false
+    steps = 2
+  }
+  window.history.go(-steps)
 }
 
 // Called by the sheet when it opens. `onBack` closes it when the phone's

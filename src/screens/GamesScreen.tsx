@@ -4,8 +4,8 @@ import { Page } from '../components/Page.tsx'
 import { useAction } from '../components/useAction.ts'
 import { useNow } from '../components/useNow.ts'
 import { store, useAppData } from '../data/store.ts'
-import { formatDuration, formatGameDate, minutesSince } from '../lib/dates.ts'
-import { isPlaying, net, potCents, topWinner } from '../lib/game.ts'
+import { formatDuration, formatGameDate } from '../lib/dates.ts'
+import { gameClock, isPlaying, net, potCents, topWinner } from '../lib/game.ts'
 import { formatMoney, formatSigned, sum } from '../lib/money.ts'
 import { findPlayer } from '../lib/players.ts'
 import { activeGame, completedGames, monthGroups, unpaidPayments } from '../lib/stats.ts'
@@ -68,7 +68,8 @@ export function GamesScreen() {
 function LiveGameCard({ game }: { game: GameWithEntries }) {
   const now = useNow()
   const playing = game.game_entries.filter(isPlaying).length
-  const elapsed = game.started_at ? `, ${formatDuration(minutesSince(game.started_at, now))}` : ''
+  const clock = gameClock(game, now)
+  const elapsed = clock ? `, ${formatDuration(clock.minutes)}` : ''
   return (
     <button className="start" onClick={() => navigate({ name: 'game', id: game.id })}>
       <span className="pulse" aria-hidden="true" />
