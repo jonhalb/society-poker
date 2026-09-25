@@ -185,6 +185,15 @@ describe('settling up', () => {
     expect(now.find(p => p.amount_cents === 500)?.paid).toBe(true)
   })
 
+  it('leaves payments untouched when recalculating changes nothing', async () => {
+    const { store, id, dan } = await playedGame()
+    await store.setCashOut(entryOf(store, id, dan.id).id, 500)
+    await store.completeGame(id)
+    const before = gameOf(store, id).payments.map(p => p.id)
+    await store.syncPayments(id)
+    expect(gameOf(store, id).payments.map(p => p.id)).toEqual(before)
+  })
+
   it('records when a payment was marked paid', async () => {
     const { store, id, dan } = await playedGame()
     await store.setCashOut(entryOf(store, id, dan.id).id, 500)

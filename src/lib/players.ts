@@ -16,6 +16,10 @@ export function findByName(players: Player[], name: string): Player | undefined 
   return players.find(p => cleanName(p.name).toLowerCase() === wanted)
 }
 
+export function findPlayer(players: Player[], id: Id): Player | undefined {
+  return players.find(p => p.id === id)
+}
+
 // A random emoji nobody is using yet (or any emoji once they're all taken)
 export function pickEmoji(players: Player[], random: () => number = Math.random): string {
   const used = new Set(players.map(p => p.emoji))

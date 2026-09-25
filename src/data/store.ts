@@ -15,7 +15,7 @@ import { useSyncExternalStore } from 'react'
 import { minutesSince } from '../lib/dates.ts'
 import { newId } from '../lib/ids.ts'
 import { cleanName, findByName, pickEmoji } from '../lib/players.ts'
-import { carryOverPaid, settleGame, settleUp, unmatchedPaid } from '../lib/settle.ts'
+import { carryOverPaid, settleGame, settleUp, sortPayments, unmatchedPaid } from '../lib/settle.ts'
 import type { BuyIn, Game, GameEntry, GameWithEntries, Id, Payment, Player } from '../lib/types.ts'
 
 export interface Tables {
@@ -87,7 +87,7 @@ export function joinTables(t: Tables): AppData {
         .filter(e => e.game_id === game.id)
         .sort(byCreated)
         .map(e => ({ ...e, buy_ins: [...(buyInsByEntry.get(e.id) ?? [])].sort(byCreated) })),
-      payments: t.payments.filter(p => p.game_id === game.id),
+      payments: sortPayments(t.payments.filter(p => p.game_id === game.id)),
     })),
   }
 }
@@ -196,7 +196,7 @@ export function createStore(storage: StorageLike, now: () => Date = () => new Da
     const game = snapshot.games.find(g => g.id === gameId)!
     const fresh = settleGame(game)
     const existing = game.payments
-    const next = carryOverPaid(fresh, existing)
+    const next = sortPayments(carryOverPaid(fresh, existing))
     const same = next.length === existing.length && next.every((p, i) =>
       p.from_player_id === existing[i].from_player_id && p.to_player_id === existing[i].to_player_id
       && p.amount_cents === existing[i].amount_cents && p.paid === existing[i].paid)

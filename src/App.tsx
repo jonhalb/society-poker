@@ -3,14 +3,17 @@ import { SheetProvider } from './components/SheetProvider.tsx'
 import { TabBar } from './components/TabBar.tsx'
 import { ToastProvider } from './components/ToastProvider.tsx'
 import { href, tabFor, useRoute, type Route } from './router.ts'
-import { ComingSoon, GamesPlaceholder, PlayersPlaceholder, StatsPlaceholder } from './screens/Placeholders.tsx'
+import { GamesScreen } from './screens/GamesScreen.tsx'
+import { LogGameScreen } from './screens/LogGameScreen.tsx'
+import { NewGameScreen } from './screens/NewGameScreen.tsx'
+import { ComingSoon, GamePlaceholder, PlayersPlaceholder, StatsPlaceholder } from './screens/Placeholders.tsx'
 
 function Screen({ route }: { route: Route }) {
   switch (route.name) {
-    case 'games': return <GamesPlaceholder />
-    case 'new': return <ComingSoon title="New game" step={3} back={{ name: 'games' }} />
-    case 'log': return <ComingSoon title="Log a finished game" step={3} back={{ name: 'games' }} />
-    case 'game': return <ComingSoon title="Game" step={4} back={{ name: 'games' }} />
+    case 'games': return <GamesScreen />
+    case 'new': return <NewGameScreen from={route.from} />
+    case 'log': return <LogGameScreen />
+    case 'game': return <GamePlaceholder id={route.id} />
     case 'settle': return <ComingSoon title="Settle up" step={5} back={{ name: 'game', id: route.id }} />
     case 'players': return <PlayersPlaceholder />
     case 'player': return <ComingSoon title="Player" step={6} back={{ name: 'players' }} />

@@ -3,19 +3,19 @@
 import { DevTools } from '../components/DevTools.tsx'
 import { Page } from '../components/Page.tsx'
 import { useAppData } from '../data/store.ts'
-import { completedGames } from '../lib/stats.ts'
 import type { Route } from '../router.ts'
 
-export function GamesPlaceholder() {
-  const { players, games } = useAppData()
-  const finished = completedGames(games).length
+// A live game (step 4) or a finished game's detail page (step 5)
+export function GamePlaceholder({ id }: { id: string }) {
+  const { games } = useAppData()
+  const game = games.find(g => g.id === id)
+  const title = !game ? 'Game not found' : game.status === 'active' ? (game.location || 'Live game') : 'Game detail'
+  const text = !game ? 'This game no longer exists.'
+    : game.status === 'active' ? 'The live game screen arrives in step 4.'
+    : 'The game detail screen arrives in step 5.'
   return (
-    <Page title="Society Poker">
-      <div className="empty">
-        <div className="mono gold" style={{ fontSize: 40 }}>{finished}</div>
-        finished game{finished === 1 ? '' : 's'} and {players.length} player{players.length === 1 ? '' : 's'} saved on this phone.
-        <br />The Games screens arrive in step 3.
-      </div>
+    <Page title={title} back={{ name: 'games' }}>
+      <div className="empty">{text}</div>
     </Page>
   )
 }

@@ -102,6 +102,9 @@ button.row:active { background: var(--card-2); }
 .field { display: block; margin-bottom: 14px; }
 .field span { display: block; font-size: 14px; color: var(--muted); margin: 0 4px 6px; }
 .field input { width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 12px 14px; font-size: 17px; }
+/* iPhone Safari shrinks styled date boxes to nothing unless told otherwise */
+.field input[type=date] { -webkit-appearance: none; appearance: none; display: block; min-height: 50px; text-align: left; }
+.field input[type=date]::-webkit-date-and-time-value { text-align: left; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: -6px 0 14px; }
 .picks { display: flex; flex-wrap: wrap; gap: 8px; }
