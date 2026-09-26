@@ -125,10 +125,10 @@ Constraints: amounts ≥ 0; unique player per game; only one `active` game per g
 
 ## Notes for Upcoming Work
 
-**Step 6 (players and stats)**
-- Until Phase 5, store a resized photo as a `data:image/jpeg` address in `photo_path`. `Avatar` only shows `photo_path` values starting with `data:image/`. Phase 5 changes this to Storage paths
-- Players are archived, never deleted. Pickers already hide archived players
-- The Stats tab keeps the development-only tools under `import.meta.env.DEV`
+**Photos (from step 6)**
+- Until Phase 5, a resized photo is stored as a `data:image/jpeg` address in `photo_path`. `Avatar` only shows `photo_path` values starting with `data:image/`. Phase 5 changes this to Storage paths
+- Photo rules (images only, 5 MB max, centred square crop) are in `src/lib/photo.ts`; the browser resizing is in `src/components/resizePhoto.ts`
+- Players are archived, never deleted. Pickers and the Players tab hide archived players; there is no archive button yet
 
 **Phase 2 (database)**
 - `game_entries` has `created_at` to keep players in join order
@@ -171,8 +171,8 @@ Constraints: amounts ≥ 0; unique player per game; only one `active` game per g
   - [x] Step 2: App shell and data module (tabs, routes, sheets, toasts with Undo, dev-only sample data)
   - [x] Step 3: Games tab (start, run it back, log a finished game, still owed, past games)
   - [x] Step 4: Live game
-  - [x] Step 5: Settle up and game detail (built and pushed; not yet tested on the phone)
-  - [ ] Step 6: Players and Stats  ← next
+  - [x] Step 5: Settle up and game detail
+  - [x] Step 6: Players and Stats (built and pushed; not yet tested on the phone)
 - [ ] Phase 2: Database
 - [ ] Phase 3: Accounts and group
 - [ ] Phase 4: Connect to Supabase

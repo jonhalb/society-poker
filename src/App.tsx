@@ -10,8 +10,9 @@ import { GameDetailScreen } from './screens/GameDetailScreen.tsx'
 import { LiveGameScreen } from './screens/LiveGameScreen.tsx'
 import { LogGameScreen } from './screens/LogGameScreen.tsx'
 import { NewGameScreen } from './screens/NewGameScreen.tsx'
-import { ComingSoon, PlayersPlaceholder, StatsPlaceholder } from './screens/Placeholders.tsx'
+import { PlayerScreen, PlayersScreen } from './screens/PlayersScreen.tsx'
 import { SettleScreen } from './screens/SettleScreen.tsx'
+import { StatsScreen } from './screens/StatsScreen.tsx'
 
 function Screen({ route }: { route: Route }) {
   switch (route.name) {
@@ -20,9 +21,9 @@ function Screen({ route }: { route: Route }) {
     case 'log': return <LogGameScreen />
     case 'game': return <GameRoute id={route.id} />
     case 'settle': return <SettleScreen id={route.id} />
-    case 'players': return <PlayersPlaceholder />
-    case 'player': return <ComingSoon title="Player" step={6} back={{ name: 'players' }} />
-    case 'stats': return <StatsPlaceholder />
+    case 'players': return <PlayersScreen />
+    case 'player': return <PlayerScreen id={route.id} />
+    case 'stats': return <StatsScreen />
   }
 }
 
